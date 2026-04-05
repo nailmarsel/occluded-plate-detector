@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Поиск автомобилей</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Поиск автомобилей по фото</h1>
+        <div class="upload-area" id="uploadArea">
+            <div>📁</div>
+            <h3>Перетащите фото сюда</h3>
+            <p>или нажмите для выбора файла</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="btn" onclick="document.getElementById('fileInput').click()">Выбрать файл</button>
+        </div>
+        <div class="preview-section" id="previewSection" style="display:none;">
+            <h3>Предпросмотр:</h3>
+            <img id="previewImage">
+            <div>
+                <button class="btn" onclick="uploadImage()">Найти в базе</button>
+                <button class="btn btn-secondary" onclick="clearPreview()">Отмена</button>
+            </div>
+        </div>
+        <div class="loading" id="loading" style="display:none;">
+            <div class="spinner"></div>
+            <p>Идет поиск...</p>
+        </div>
+        <div class="results" id="results" style="display:none;">
+            <h3>Результаты:</h3>
+            <div id="resultsGrid"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
