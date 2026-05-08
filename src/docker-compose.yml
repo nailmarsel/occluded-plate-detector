@@ -17,7 +17,7 @@ services:
     networks:
       - autobahncv-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -u elastic:changeme http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      test: [ "CMD-SHELL", "curl -s -u elastic:changeme http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -38,7 +38,7 @@ services:
     networks:
       - autobahncv-network
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
       timeout: 5s
       retries: 5

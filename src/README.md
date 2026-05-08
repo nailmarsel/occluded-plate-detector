@@ -1,6 +1,8 @@
 # AutobahnCV - Car License Plate Search System
 
-A FastAPI-based application that allows users to search for similar cars by uploading a photo with a partially visible license plate. The system uses neural networks for car detection, plate recognition, and embedding generation, then searches Elasticsearch for the top 5 most similar vehicles.
+A FastAPI-based application that allows users to search for similar cars by uploading a photo with a partially visible
+license plate. The system uses neural networks for car detection, plate recognition, and embedding generation, then
+searches Elasticsearch for the top 5 most similar vehicles.
 
 ## Architecture
 
@@ -112,6 +114,7 @@ docker compose ps
 | Kibana | `http://localhost:5601` | ES visualization (optional) |
 
 To start with Kibana:
+
 ```bash
 docker compose --profile monitoring up -d
 ```
@@ -159,6 +162,7 @@ docker compose --profile full up -d
 ```
 
 The application will be available at:
+
 - **Frontend (UI)**: `http://localhost:3000`
 - **API Base**: `http://localhost:8000/api/v1`
 - **Swagger Docs**: `http://localhost:8000/docs`
@@ -168,13 +172,13 @@ The application will be available at:
 
 Once running, the API docs are available at:
 
-| Endpoint | Description |
-|----------|-------------|
-| `/docs` | Swagger UI — interactive API explorer |
-| `/redoc` | ReDoc — clean static documentation |
-| `/openapi.json` | Raw OpenAPI 3.1 JSON spec |
-| `/api/v1/openapi/json` | Download OpenAPI JSON spec |
-| `/api/v1/openapi/yaml` | Download OpenAPI YAML spec |
+| Endpoint               | Description                           |
+|------------------------|---------------------------------------|
+| `/docs`                | Swagger UI — interactive API explorer |
+| `/redoc`               | ReDoc — clean static documentation    |
+| `/openapi.json`        | Raw OpenAPI 3.1 JSON spec             |
+| `/api/v1/openapi/json` | Download OpenAPI JSON spec            |
+| `/api/v1/openapi/yaml` | Download OpenAPI YAML spec            |
 
 ## API Endpoints
 
@@ -185,9 +189,11 @@ Once running, the API docs are available at:
 Upload a car photo with a partially visible license plate to find the top 5 most similar cars.
 
 **Request:** Multipart form with file upload
+
 - `image`: Car photo (JPEG/PNG)
 
 **Response:**
+
 ```json
 {
   "results": [
@@ -210,9 +216,11 @@ Upload a car photo with a partially visible license plate to find the top 5 most
 Add a car to the system. The image is processed, uploaded to MinIO, and indexed in Elasticsearch.
 
 **Request:** Multipart form
+
 - `image`: Car photo (JPEG/PNG)
 
 **Response:**
+
 ```json
 {
   "car_id": "car_001",
@@ -231,6 +239,7 @@ Process all images in a local folder at once.
 `prefix` is optional. If you omit it, the backend generates UUID-based `car_id` values.
 
 **Request:** JSON body
+
 ```json
 {
   "folder_path": "/path/to/car/photos",
@@ -239,6 +248,7 @@ Process all images in a local folder at once.
 ```
 
 **Response:**
+
 ```json
 {
   "total": 10,
@@ -268,6 +278,7 @@ Process all images in a local folder at once.
 Check the health status of the application and its dependencies.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -351,32 +362,43 @@ The Elasticsearch index must have the following mapping:
 {
   "mappings": {
     "properties": {
-      "car_id": { "type": "keyword" },
-      "plate_number": { "type": "text" },
+      "car_id": {
+        "type": "keyword"
+      },
+      "plate_number": {
+        "type": "text"
+      },
       "embedding": {
         "type": "dense_vector",
         "dims": 512,
         "index": true,
         "similarity": "cosine"
       },
-      "s3_key": { "type": "keyword" },
-      "metadata": { "type": "object" },
-      "created_at": { "type": "date" }
+      "s3_key": {
+        "type": "keyword"
+      },
+      "metadata": {
+        "type": "object"
+      },
+      "created_at": {
+        "type": "date"
+      }
     }
   }
 }
 ```
 
-Run `scripts/setup_elasticsearch.sh` manually if you're not using Docker Compose, or run the `es-setup` job via `docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 512.
+Run `scripts/setup_elasticsearch.sh` manually if you're not using Docker Compose, or run the `es-setup` job via
+`docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 512.
 
 ## CI/CD
 
 ### GitHub Actions
 
-| Workflow | Trigger | What it does |
-|----------|---------|-------------|
-| **CI** (`../.github/workflows/ci.yml`) | Push/PR touching `src/**` | Lint (ruff), type check (mypy), run tests, build Docker |
-| **CD** (`../.github/workflows/cd.yml`) | Git tag `v*` | Build & push the AutobahnCV backend Docker image to GHCR, create release, deploy via SSH |
+| Workflow                               | Trigger                   | What it does                                                                             |
+|----------------------------------------|---------------------------|------------------------------------------------------------------------------------------|
+| **CI** (`../.github/workflows/ci.yml`) | Push/PR touching `src/**` | Lint (ruff), type check (mypy), run tests, build Docker                                  |
+| **CD** (`../.github/workflows/cd.yml`) | Git tag `v*`              | Build & push the AutobahnCV backend Docker image to GHCR, create release, deploy via SSH |
 
 The workflows set `src` as their working directory so app-local commands
 such as `pip install -r requirements.txt`, `pytest tests/`, and Docker builds
@@ -409,15 +431,15 @@ pytest tests/test_endpoints.py -v
 
 The application uses structured error responses with error codes:
 
-| Code | Meaning |
-|------|---------|
-| `INVALID_IMAGE` | Invalid image format or empty file |
-| `CAR_NOT_DETECTED` | No car detected in the image |
-| `PLATE_NOT_DETECTED` | No license plate detected |
-| `OCR_FAILED` | OCR processing failed |
-| `EMBEDDING_FAILED` | Embedding generation failed |
-| `ELASTICSEARCH_ERROR` | Elasticsearch operation failed |
-| `NEURON_ERROR` | General neural network error |
+| Code                  | Meaning                            |
+|-----------------------|------------------------------------|
+| `INVALID_IMAGE`       | Invalid image format or empty file |
+| `CAR_NOT_DETECTED`    | No car detected in the image       |
+| `PLATE_NOT_DETECTED`  | No license plate detected          |
+| `OCR_FAILED`          | OCR processing failed              |
+| `EMBEDDING_FAILED`    | Embedding generation failed        |
+| `ELASTICSEARCH_ERROR` | Elasticsearch operation failed     |
+| `NEURON_ERROR`        | General neural network error       |
 
 ### Configuration
 
