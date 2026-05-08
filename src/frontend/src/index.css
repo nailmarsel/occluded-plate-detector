@@ -172,15 +172,22 @@ input, select, textarea {
 /* Preview */
 .image-preview {
     margin-top: 1rem;
+    margin-bottom: 1rem;
     border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+    background: var(--gray-100);
+    height: min(52vh, 420px);
+    min-height: 220px;
     overflow: hidden;
-    max-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .image-preview img {
     width: 100%;
-    height: 300px;
-    object-fit: cover;
+    height: 100%;
+    object-fit: contain;
 }
 
 /* Form */
