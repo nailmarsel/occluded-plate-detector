@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
-import numpy as np
+
 from PIL import Image
+
 from app.core.logging import logger
 
 

@@ -1,5 +1,5 @@
-from typing import Optional
 from PIL import Image
+
 from app.core.logging import logger
 from app.neurons.base import BaseNeuron
 

@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """HTTP status codes as strings."""
     OK = "200 OK"
     CREATED = "201 Created"
@@ -11,7 +11,7 @@ class Status(str, Enum):
     SERVICE_UNAVAILABLE = "503 Service Unavailable"
 
 
-class ErrorCode(str, Enum):
+class ErrorCode(StrEnum):
     """Application-specific error codes."""
     INVALID_IMAGE = "INVALID_IMAGE"
     CAR_NOT_DETECTED = "CAR_NOT_DETECTED"

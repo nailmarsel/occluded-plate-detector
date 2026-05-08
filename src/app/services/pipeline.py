@@ -1,12 +1,13 @@
-from typing import Dict, Any, Tuple, Optional
-from PIL import Image
 import io
-from app.core.logging import logger
+from typing import Any
+
+from PIL import Image
+
 from app.core.config import settings
-from app.core.enums import ErrorCode
+from app.core.logging import logger
 from app.neurons.car_plate_detection import CarDetectionNeuron, PlateDetectionNeuron
-from app.neurons.ocr import OCRNeuron
 from app.neurons.embedding import EmbeddingNeuron
+from app.neurons.ocr import OCRNeuron
 
 
 class ImageProcessingPipeline:
@@ -19,10 +20,10 @@ class ImageProcessingPipeline:
     """
 
     def __init__(self):
-        self.car_detector: Optional[CarDetectionNeuron] = None
-        self.plate_detector: Optional[PlateDetectionNeuron] = None
-        self.ocr: Optional[OCRNeuron] = None
-        self.embedding_model: Optional[EmbeddingNeuron] = None
+        self.car_detector: CarDetectionNeuron | None = None
+        self.plate_detector: PlateDetectionNeuron | None = None
+        self.ocr: OCRNeuron | None = None
+        self.embedding_model: EmbeddingNeuron | None = None
 
     def _ensure_initialized(self) -> None:
         """Ensure all neurons are initialized, raise otherwise."""
@@ -67,7 +68,7 @@ class ImageProcessingPipeline:
 
         logger.info("Image processing pipeline initialized successfully")
 
-    async def process_for_search(self, image_data: bytes) -> Dict[str, Any]:
+    async def process_for_search(self, image_data: bytes) -> dict[str, Any]:
         """
         Process input image for search: extract plate number and generate embedding.
 
@@ -104,7 +105,10 @@ class ImageProcessingPipeline:
             assert self.ocr is not None
             ocr_result = await self.ocr.predict(cropped_plate)
             plate_number = ocr_result["plate_number"]
-            logger.info(f"Plate number recognized: '{plate_number}' (conf: {ocr_result['confidence']})")
+            logger.info(
+                f"Plate number recognized: '{plate_number}' "
+                f"(conf: {ocr_result['confidence']})"
+            )
 
             # Step 4: Generate embedding from cropped car image
             assert self.embedding_model is not None
@@ -125,9 +129,10 @@ class ImageProcessingPipeline:
             logger.error(f"Image processing pipeline failed: {e}")
             raise
 
-    async def process_for_indexing(self, image_data: bytes) -> Dict[str, Any]:
+    async def process_for_indexing(self, image_data: bytes) -> dict[str, Any]:
         """
-        Process image for indexing: same as process_for_search but optimized for indexing workflow.
+        Process image for indexing: same as process_for_search but optimized
+        for indexing workflow.
 
         Args:
             image_data: Raw image bytes

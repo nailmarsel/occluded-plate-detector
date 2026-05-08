@@ -1,7 +1,9 @@
+from typing import Any
+
 import boto3
-from botocore.exceptions import ClientError, NoCredentialsError
 from botocore.config import Config
-from typing import Optional, Any
+from botocore.exceptions import ClientError, NoCredentialsError
+
 from app.core.config import settings
 from app.core.logging import logger
 
@@ -10,7 +12,7 @@ class S3Client:
     """S3/Garage client for image storage."""
 
     def __init__(self):
-        self.client: Optional[Any] = None
+        self.client: Any | None = None
         self.bucket_name = settings.S3_BUCKET_NAME
 
     def _ensure_connected(self) -> Any:
@@ -100,7 +102,7 @@ class S3Client:
             logger.error(f"Failed to upload image {object_key}: {e}")
             raise
 
-    async def download_image(self, object_key: str) -> Optional[bytes]:
+    async def download_image(self, object_key: str) -> bytes | None:
         """
         Download image from S3/Garage.
 
@@ -147,7 +149,7 @@ class S3Client:
 
     def get_presigned_url(
         self, object_key: str, expiration: int = 3600
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Generate a presigned URL for temporary access.
 

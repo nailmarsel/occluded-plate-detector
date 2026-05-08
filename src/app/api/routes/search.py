@@ -1,11 +1,12 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
-from app.core.logging import logger
-from app.core.enums import ErrorCode
-from app.models.schemas import SearchResults, SearchResponse, ErrorResponse
-from app.services.pipeline import ImageProcessingPipeline
-from app.services.elasticsearch_client import es_client
-from app.services.s3_client import s3_client
+from fastapi import APIRouter, File, HTTPException, UploadFile
+
 from app.core.config import settings
+from app.core.enums import ErrorCode
+from app.core.logging import logger
+from app.models.schemas import ErrorResponse, SearchResponse, SearchResults
+from app.services.elasticsearch_client import es_client
+from app.services.pipeline import ImageProcessingPipeline
+from app.services.s3_client import s3_client
 
 router = APIRouter(prefix="/search", tags=["search"])
 

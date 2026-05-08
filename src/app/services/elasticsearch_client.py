@@ -1,6 +1,8 @@
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ConnectionError, NotFoundError
+
 from app.core.config import settings
 from app.core.logging import logger
 
@@ -9,7 +11,7 @@ class ElasticsearchClient:
     """Async Elasticsearch client for car data operations."""
 
     def __init__(self):
-        self.client: Optional[AsyncElasticsearch] = None
+        self.client: AsyncElasticsearch | None = None
 
     def _ensure_connected(self) -> AsyncElasticsearch:
         """Ensure the client is connected, raise otherwise."""
@@ -64,9 +66,9 @@ class ElasticsearchClient:
         self,
         car_id: str,
         plate_number: str,
-        embedding: List[float],
+        embedding: list[float],
         s3_key: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None
     ) -> bool:
         """
         Index a car document in Elasticsearch.
@@ -106,9 +108,9 @@ class ElasticsearchClient:
     async def search_by_plate_and_embedding(
         self,
         plate_number: str,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = 5
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search for cars by plate number filter and embedding similarity.
 
@@ -170,7 +172,7 @@ class ElasticsearchClient:
             logger.error(f"Search failed for plate '{plate_number}': {e}")
             raise
 
-    async def get_car_by_id(self, car_id: str) -> Optional[Dict[str, Any]]:
+    async def get_car_by_id(self, car_id: str) -> dict[str, Any] | None:
         """Retrieve a car document by ID."""
         try:
             client = self._ensure_connected()

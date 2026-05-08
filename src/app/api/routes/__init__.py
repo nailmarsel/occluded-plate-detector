@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.routes import search, index, health
+
+from app.api.routes import health, index, search
 
 # Create main router that includes all route modules
 api_router = APIRouter()

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, Response
+
 from app.core.logging import logger
 from app.models.schemas import HealthResponse
 from app.services.elasticsearch_client import es_client
@@ -77,6 +78,7 @@ async def openapi_yaml():
     """Download OpenAPI specification as YAML."""
     try:
         import yaml
+
         from app.main import app as main_app
 
         schema = main_app.openapi()

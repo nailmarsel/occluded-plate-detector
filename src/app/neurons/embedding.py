@@ -1,6 +1,6 @@
-from typing import List
 import numpy as np
 from PIL import Image
+
 from app.core.logging import logger
 from app.neurons.base import BaseNeuron
 

@@ -1,19 +1,18 @@
 from contextlib import asynccontextmanager
-from typing import Optional
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
 
+from app.api.routes import api_router
 from app.core.config import settings
 from app.core.logging import logger
-from app.api.routes import api_router
 from app.services.elasticsearch_client import es_client
-from app.services.s3_client import s3_client
 from app.services.pipeline import ImageProcessingPipeline
+from app.services.s3_client import s3_client
 
 
 # Global pipeline instance
-processing_pipeline: Optional[ImageProcessingPipeline] = None
+processing_pipeline: ImageProcessingPipeline | None = None
 
 
 @asynccontextmanager
@@ -113,7 +112,8 @@ def create_application() -> FastAPI:
 # AutobahnCV - Car License Plate Search System
 
 This system allows you to:
-- **Search** for similar cars by uploading a photo with a partially visible license plate
+- **Search** for similar cars by uploading a photo with a partially visible
+  license plate
 - **Index** new cars into the system for future search queries
 
 ## How it works:
@@ -131,7 +131,8 @@ This system allows you to:
 - **Download Spec**: `/api/v1/openapi.yaml` — Download as YAML
 
 ## Authentication
-Currently no authentication is required. Bearer token support is planned for future releases.
+Currently no authentication is required. Bearer token support is planned for
+future releases.
         """,
         version="1.0.0",
         docs_url="/docs",

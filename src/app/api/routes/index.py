@@ -1,17 +1,16 @@
 import io
-import os
 import uuid
 from pathlib import Path
-from typing import List, Optional
-from fastapi import APIRouter, UploadFile, File, HTTPException
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from app.core.logging import logger
-from app.core.enums import ErrorCode
 from app.core.config import settings
-from app.models.schemas import IndexResponse, ErrorResponse
-from app.services.pipeline import ImageProcessingPipeline
+from app.core.enums import ErrorCode
+from app.core.logging import logger
+from app.models.schemas import ErrorResponse, IndexResponse
 from app.services.elasticsearch_client import es_client
+from app.services.pipeline import ImageProcessingPipeline
 from app.services.s3_client import s3_client
 
 router = APIRouter(prefix="/index", tags=["index"])
@@ -21,9 +20,9 @@ class BatchIndexResult(BaseModel):
     """Result for a single file in batch indexing."""
     car_id: str
     filename: str
-    plate_number: Optional[str] = None
+    plate_number: str | None = None
     status: str  # "indexed", "failed"
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class BatchIndexResponse(BaseModel):
@@ -31,13 +30,13 @@ class BatchIndexResponse(BaseModel):
     total: int
     succeeded: int
     failed: int
-    results: List[BatchIndexResult]
+    results: list[BatchIndexResult]
 
 
 class BatchIndexRequest(BaseModel):
     """Request model for batch indexing from a local folder."""
     folder_path: str
-    prefix: Optional[str] = None
+    prefix: str | None = None
 
 
 async def _process_and_index_single_image(
@@ -228,7 +227,7 @@ async def batch_index_cars(
         f"Batch indexing {len(image_files)} images from {folder}"
     )
 
-    results: List[BatchIndexResult] = []
+    results: list[BatchIndexResult] = []
     succeeded = 0
     failed = 0
 
@@ -251,7 +250,8 @@ async def batch_index_cars(
             results.append(BatchIndexResult(
                 car_id=car_id,
                 filename=filename,
-                plate_number="extracted",  # Will be set in _process_and_index_single_image
+                # Will be set in _process_and_index_single_image.
+                plate_number="extracted",
                 status="indexed"
             ))
             succeeded += 1
