@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 import re
 
 import numpy as np

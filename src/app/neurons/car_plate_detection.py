@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 from PIL import Image
 from app.core.config import settings
 from app.core.logging import logger
