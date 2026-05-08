@@ -5,9 +5,8 @@ services:
     container_name: autobahncv-elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=true
+      - xpack.security.enabled=false
       - xpack.security.enrollment.enabled=false
-      - ELASTIC_PASSWORD=changeme
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
@@ -17,7 +16,7 @@ services:
     networks:
       - autobahncv-network
     healthcheck:
-      test: [ "CMD-SHELL", "curl -s -u elastic:changeme http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -77,16 +76,13 @@ services:
         echo 'Waiting for Elasticsearch to be ready...'
         sleep 10
         echo 'Checking Elasticsearch index mapping...'
-        if curl -fs -u elastic:changeme \
-          'http://elasticsearch:9200/cars/_mapping' \
+        if curl -fs 'http://elasticsearch:9200/cars/_mapping' \
           | grep -q '"dims":2048'; then
           echo 'Elasticsearch index mapping is already current.'
         else
           echo 'Recreating Elasticsearch index mapping...'
-          curl -s -X DELETE 'http://elasticsearch:9200/cars' \
-            -u elastic:changeme || true
+          curl -s -X DELETE 'http://elasticsearch:9200/cars' || true
           curl -s -X PUT 'http://elasticsearch:9200/cars' \
-            -u elastic:changeme \
             -H 'Content-Type: application/json' \
             -d '{
             "settings": {
@@ -121,8 +117,6 @@ services:
     container_name: autobahncv-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=changeme
     ports:
       - "5601:5601"
     depends_on:
@@ -144,8 +138,8 @@ services:
       - ML_ALLOW_HEURISTIC_PLATE_FALLBACK=True
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=changeme
+      - ELASTICSEARCH_USERNAME=
+      - ELASTICSEARCH_PASSWORD=
       - S3_ENDPOINT_URL=http://minio:9000
       - S3_ACCESS_KEY=Q3AM3UQ867SPQQA43P2F
       - S3_SECRET_KEY=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG

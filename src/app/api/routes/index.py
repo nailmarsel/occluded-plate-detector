@@ -1,6 +1,7 @@
 import io
 import uuid
-from pathlib import Path
+import zipfile
+from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
@@ -11,10 +12,13 @@ from app.core.enums import ErrorCode
 from app.core.logging import logger
 from app.models.schemas import ErrorResponse, IndexResponse
 from app.services.elasticsearch_client import es_client
-from app.services.pipeline import ImageProcessingPipeline
+from app.services.pipeline import ImageProcessingPipeline, normalize_plate_number
 from app.services.s3_client import s3_client
 
 router = APIRouter(prefix="/index", tags=["index"])
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+MAX_BATCH_FILES = 500
+MAX_ZIP_BYTES = 500 * 1024 * 1024
 
 
 class BatchIndexResult(BaseModel):
@@ -40,6 +44,11 @@ class BatchIndexRequest(BaseModel):
     prefix: str | None = None
 
 
+def _infer_plate_from_zip_path(path: str) -> str:
+    zip_path = PurePosixPath(path)
+    return normalize_plate_number(zip_path.stem)
+
+
 async def _process_and_index_single_image(
     image_data: bytes,
     car_id: str,
@@ -61,6 +70,16 @@ async def _process_and_index_single_image(
     )
 
     plate_number = result["plate_number"]
+    if not plate_number:
+        raise RuntimeError("Cannot index a car without a plate number")
+
+    existing_car = await es_client.get_car_by_plate(plate_number)
+    old_s3_key = None
+    if existing_car:
+        car_id = existing_car.get("car_id") or existing_car.get("_id") or car_id
+        old_s3_key = existing_car.get("s3_key")
+        logger.info("Replacing existing car for plate '%s': %s", plate_number, car_id)
+
     embedding = result["embedding"]
     cropped_car_image = result["cropped_car_image"]
 
@@ -91,6 +110,9 @@ async def _process_and_index_single_image(
 
     if not success:
         raise RuntimeError("Failed to index car in Elasticsearch")
+
+    if old_s3_key and old_s3_key != s3_key:
+        await s3_client.delete_image(old_s3_key)
 
     return IndexResponse(
         car_id=car_id,
@@ -125,9 +147,9 @@ async def index_car(
         ...,
         description="Car photo to index (JPEG, PNG)"
     ),
-    plate_number: str | None = Form(
-        None,
-        description="Known plate number. Skips plate detection and OCR if provided.",
+    plate_number: str = Form(
+        ...,
+        description="Known plate number. Required for database indexing.",
     ),
 ) -> IndexResponse:
     """
@@ -221,11 +243,9 @@ async def batch_index_cars(
             }
         )
 
-    # Collect image files
-    image_extensions = {".jpg", ".jpeg", ".png"}
     image_files = sorted([
         f for f in folder.iterdir()
-        if f.is_file() and f.suffix.lower() in image_extensions
+        if f.is_file() and f.suffix.lower() in IMAGE_EXTENSIONS
     ])
 
     if not image_files:
@@ -291,4 +311,141 @@ async def batch_index_cars(
         succeeded=succeeded,
         failed=failed,
         results=results
+    )
+
+
+@router.post(
+    "/batch/zip",
+    response_model=BatchIndexResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        500: {"model": ErrorResponse}
+    },
+    summary="Batch index cars from a ZIP archive",
+    description="""
+    Upload a ZIP archive with car photos. Plate numbers are inferred from each
+    image filename, for example A864AA199.jpg.
+    """
+)
+async def batch_index_zip(
+    request: Request,
+    archive: UploadFile = File(..., description="ZIP archive with car photos"),
+    prefix: str | None = Form(None),
+) -> BatchIndexResponse:
+    if archive.content_type not in {
+        "application/zip",
+        "application/x-zip-compressed",
+        "multipart/x-zip",
+    } and not (archive.filename or "").lower().endswith(".zip"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "INVALID_ARCHIVE",
+                "message": "Please upload a ZIP archive.",
+            },
+        )
+
+    archive_data = await archive.read()
+    if not archive_data:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "EMPTY_ARCHIVE",
+                "message": "Uploaded ZIP archive is empty.",
+            },
+        )
+    if len(archive_data) > MAX_ZIP_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "ARCHIVE_TOO_LARGE",
+                "message": "ZIP archive is larger than 500 MB.",
+            },
+        )
+
+    try:
+        zip_archive = zipfile.ZipFile(io.BytesIO(archive_data))
+    except zipfile.BadZipFile as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "INVALID_ARCHIVE",
+                "message": "Uploaded file is not a valid ZIP archive.",
+            },
+        ) from exc
+
+    image_entries = [
+        info for info in zip_archive.infolist()
+        if not info.is_dir()
+        and not info.filename.startswith("__MACOSX/")
+        and PurePosixPath(info.filename).suffix.lower() in IMAGE_EXTENSIONS
+    ]
+
+    if not image_entries:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "NO_IMAGES",
+                "message": "No JPEG or PNG images found in ZIP archive.",
+            },
+        )
+    if len(image_entries) > MAX_BATCH_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "TOO_MANY_IMAGES",
+                "message": f"ZIP contains more than {MAX_BATCH_FILES} images.",
+            },
+        )
+
+    pipeline = get_processing_pipeline(request)
+    results: list[BatchIndexResult] = []
+    succeeded = 0
+    failed = 0
+
+    for i, info in enumerate(image_entries):
+        filename = info.filename
+        car_id = f"{prefix}_{i}" if prefix else str(uuid.uuid4())
+
+        try:
+            plate_number = _infer_plate_from_zip_path(filename)
+            if not plate_number:
+                raise RuntimeError(
+                    "Could not infer plate number from ZIP path. Use "
+                    "the plate number as the image filename, e.g. A864AA199.jpg."
+                )
+
+            image_data = zip_archive.read(info)
+            if not image_data:
+                raise RuntimeError("Empty image file")
+
+            index_result = await _process_and_index_single_image(
+                image_data,
+                car_id,
+                pipeline,
+                plate_number=plate_number,
+            )
+
+            results.append(BatchIndexResult(
+                car_id=car_id,
+                filename=filename,
+                plate_number=index_result.plate_number,
+                status="indexed"
+            ))
+            succeeded += 1
+        except Exception as e:
+            logger.error("Failed to index ZIP entry %s: %s", filename, e)
+            results.append(BatchIndexResult(
+                car_id=car_id,
+                filename=filename,
+                status="failed",
+                error=str(e)
+            ))
+            failed += 1
+
+    return BatchIndexResponse(
+        total=len(image_entries),
+        succeeded=succeeded,
+        failed=failed,
+        results=results,
     )

@@ -24,16 +24,20 @@ class ElasticsearchClient:
     async def connect(self) -> None:
         """Establish connection to Elasticsearch."""
         try:
+            basic_auth = None
+            if settings.ELASTICSEARCH_USERNAME or settings.ELASTICSEARCH_PASSWORD:
+                basic_auth = (
+                    settings.ELASTICSEARCH_USERNAME,
+                    settings.ELASTICSEARCH_PASSWORD,
+                )
+
             self.client = AsyncElasticsearch(
                 hosts=[{
                     "host": settings.ELASTICSEARCH_HOST,
                     "port": settings.ELASTICSEARCH_PORT,
                     "scheme": "http"
                 }],
-                basic_auth=(
-                    settings.ELASTICSEARCH_USERNAME,
-                    settings.ELASTICSEARCH_PASSWORD
-                ),
+                basic_auth=basic_auth,
             )
             # Test connection
             client = self._ensure_connected()
@@ -185,6 +189,32 @@ class ElasticsearchClient:
             return None
         except Exception as e:
             logger.error(f"Failed to get car {car_id}: {e}")
+            raise
+
+    async def get_car_by_plate(self, plate_number: str) -> dict[str, Any] | None:
+        """Retrieve the first car document with an exact plate number."""
+        try:
+            client = self._ensure_connected()
+            response = await client.search(
+                index=settings.ELASTICSEARCH_INDEX,
+                body={
+                    "query": {
+                        "term": {
+                            "plate_number": plate_number,
+                        }
+                    },
+                    "size": 1,
+                },
+            )
+            hits = response.get("hits", {}).get("hits", [])
+            if not hits:
+                return None
+
+            source = hits[0].get("_source", {})
+            source["_id"] = hits[0].get("_id")
+            return source
+        except Exception as e:
+            logger.error(f"Failed to get car by plate {plate_number}: {e}")
             raise
 
     async def delete_car(self, car_id: str) -> bool:

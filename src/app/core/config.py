@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     ELASTICSEARCH_HOST: str = "localhost"
     ELASTICSEARCH_PORT: int = 9200
     ELASTICSEARCH_INDEX: str = "cars"
-    ELASTICSEARCH_USERNAME: str = "elastic"
-    ELASTICSEARCH_PASSWORD: str = "changeme"
+    ELASTICSEARCH_USERNAME: str = ""
+    ELASTICSEARCH_PASSWORD: str = ""
 
     # S3 / Garage Storage
     S3_ENDPOINT_URL: str = "http://localhost:8076"

@@ -108,7 +108,10 @@ class ImageProcessingPipeline:
             )
 
     async def process_for_search(
-        self, image_data: bytes, plate_number: str | None = None
+        self,
+        image_data: bytes,
+        plate_number: str | None = None,
+        allow_missing_plate: bool = True,
     ) -> dict[str, Any]:
         """
         Process input image for search: extract plate number and generate embedding.
@@ -166,6 +169,12 @@ class ImageProcessingPipeline:
                         f"(conf: {ocr_result['confidence']})"
                     )
                 except Exception as exc:
+                    if not allow_missing_plate:
+                        raise RuntimeError(
+                            "Plate number was not recognized. Provide "
+                            "plate_number or configure a real license plate "
+                            "detector model."
+                        ) from exc
                     plate_number = ""
                     logger.warning(
                         "Plate OCR failed; continuing with embedding-only "
@@ -209,4 +218,8 @@ class ImageProcessingPipeline:
                 - embedding: List[float] - Car image embedding
                 - cropped_car_image: PIL Image - Car image without visible plate
         """
-        return await self.process_for_search(image_data, plate_number=plate_number)
+        return await self.process_for_search(
+            image_data,
+            plate_number=plate_number,
+            allow_missing_plate=False,
+        )
