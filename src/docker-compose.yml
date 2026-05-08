@@ -1,0 +1,178 @@
+services:
+  # Elasticsearch for vector search and metadata
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: autobahncv-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=false
+      - ELASTIC_PASSWORD=changeme
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - autobahncv-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s -u elastic:changeme http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # MinIO - S3-compatible object storage (Garage-compatible API)
+  minio:
+    image: minio/minio:latest
+    container_name: autobahncv-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=Q3AM3UQ867SPQQA43P2F
+      - MINIO_ROOT_PASSWORD=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    volumes:
+      - minio_data:/data
+    networks:
+      - autobahncv-network
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # MinIO setup job (creates bucket and sets policy)
+  minio-setup:
+    image: minio/mc:latest
+    container_name: autobahncv-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...' &&
+      sleep 5 &&
+      echo 'Configuring MinIO...' &&
+      mc alias set local http://minio:9000 Q3AM3UQ867SPQQA43P2F zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG &&
+      mc mb local/autobahncv || true &&
+      mc anonymous set download local/autobahncv &&
+      echo 'MinIO setup complete!'
+      "
+    networks:
+      - autobahncv-network
+
+  # Elasticsearch setup job (creates index mapping)
+  es-setup:
+    image: curlimages/curl:latest
+    container_name: autobahncv-es-setup
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo 'Waiting for Elasticsearch to be ready...'
+        sleep 10
+        echo 'Creating Elasticsearch index mapping...'
+        curl -s -X PUT 'http://elasticsearch:9200/cars' \
+          -u elastic:changeme \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "settings": {
+              "number_of_shards": 1,
+              "number_of_replicas": 0
+            },
+            "mappings": {
+              "properties": {
+                "car_id": { "type": "keyword" },
+                "plate_number": { "type": "text" },
+                "embedding": {
+                  "type": "dense_vector",
+                  "dims": 512,
+                  "index": true,
+                  "similarity": "cosine"
+                },
+                "s3_key": { "type": "keyword" },
+                "metadata": { "type": "object" },
+                "created_at": { "type": "date" }
+              }
+            }
+          }'
+        echo ''
+        echo 'Elasticsearch index mapping created successfully!'
+    networks:
+      - autobahncv-network
+
+  # Kibana (optional, for Elasticsearch visualization)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: autobahncv-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=changeme
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - autobahncv-network
+    profiles:
+      - monitoring
+      - full
+
+  # AutobahnCV Application
+  app:
+    build: .
+    container_name: autobahncv-app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=changeme
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=Q3AM3UQ867SPQQA43P2F
+      - S3_SECRET_KEY=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+      - S3_BUCKET_NAME=autobahncv
+      - S3_REGION=us-east-1
+      - S3_USE_SSL=False
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      es-setup:
+        condition: service_completed_successfully
+      minio-setup:
+        condition: service_completed_successfully
+    networks:
+      - autobahncv-network
+    profiles:
+      - full
+
+  # Frontend - React SPA served via Nginx with API proxy
+  frontend:
+    build: ./frontend
+    container_name: autobahncv-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
+    networks:
+      - autobahncv-network
+    profiles:
+      - full
+
+volumes:
+  es_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  autobahncv-network:
+    driver: bridge

@@ -1,0 +1,15 @@
+.idea/
+**/.idea/
+.qwen/
+**/.qwen/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.venv/
+venv/
+node_modules/
+dist/
+*.log
