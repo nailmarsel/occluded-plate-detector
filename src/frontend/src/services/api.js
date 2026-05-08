@@ -17,9 +17,10 @@ export async function searchSimilarCars(imageFile) {
     return response.json();
 }
 
-export async function indexCar(imageFile) {
+export async function indexCar(imageFile, plateNumber) {
     const formData = new FormData();
     formData.append('image', imageFile);
+    if (plateNumber) formData.append('plate_number', plateNumber);
 
     const response = await fetch(`${API_BASE}/api/v1/index`, {
         method: 'POST',
@@ -34,11 +35,14 @@ export async function indexCar(imageFile) {
     return response.json();
 }
 
-export async function batchIndexCars(folderPath, prefix) {
-    const response = await fetch(`${API_BASE}/api/v1/index/batch`, {
+export async function batchIndexCars(archiveFile, prefix) {
+    const formData = new FormData();
+    formData.append('archive', archiveFile);
+    if (prefix) formData.append('prefix', prefix);
+
+    const response = await fetch(`${API_BASE}/api/v1/index/batch/zip`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({folder_path: folderPath, prefix: prefix || null}),
+        body: formData,
     });
 
     if (!response.ok) {

@@ -1,12 +1,11 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 
+from app.api.dependencies import get_processing_pipeline
 from app.core.config import settings
 from app.core.enums import ErrorCode
 from app.core.logging import logger
 from app.models.schemas import ErrorResponse, SearchResponse, SearchResults
 from app.services.elasticsearch_client import es_client
-from app.services.pipeline import ImageProcessingPipeline
-from app.services.s3_client import s3_client
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -31,10 +30,11 @@ router = APIRouter(prefix="/search", tags=["search"])
     """
 )
 async def search_similar_cars(
+    request: Request,
     image: UploadFile = File(
         ...,
         description="Car photo with partially visible license plate (JPEG, PNG)"
-    )
+    ),
 ) -> SearchResults:
     """
     Search for similar cars based on uploaded image.
@@ -63,17 +63,17 @@ async def search_similar_cars(
 
         logger.info(f"Processing search request for image: {image.filename}")
 
-        # Get pipeline instance (should be initialized on startup)
-        pipeline = ImageProcessingPipeline()
-        # Note: In production, use dependency injection or app state
-
         # Process image through the pipeline
+        pipeline = get_processing_pipeline(request)
         result = await pipeline.process_for_search(image_data)
 
         plate_number = result["plate_number"]
         embedding = result["embedding"]
 
-        logger.info(f"Searching for cars with plate: '{plate_number}'")
+        if plate_number:
+            logger.info(f"Searching for cars with plate: '{plate_number}'")
+        else:
+            logger.info("Searching for cars by embedding only")
 
         # Search in Elasticsearch
         search_result = await es_client.search_by_plate_and_embedding(
@@ -90,7 +90,7 @@ async def search_similar_cars(
         for hit in hits:
             source = hit.get("_source", {})
             s3_key = source.get("s3_key")
-            image_url = s3_client.get_presigned_url(s3_key) if s3_key else None
+            image_url = f"/api/v1/images/{s3_key}" if s3_key else None
 
             formatted_results.append(SearchResponse(
                 car_id=source.get("car_id"),

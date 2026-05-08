@@ -24,16 +24,20 @@ class ElasticsearchClient:
     async def connect(self) -> None:
         """Establish connection to Elasticsearch."""
         try:
+            basic_auth = None
+            if settings.ELASTICSEARCH_USERNAME or settings.ELASTICSEARCH_PASSWORD:
+                basic_auth = (
+                    settings.ELASTICSEARCH_USERNAME,
+                    settings.ELASTICSEARCH_PASSWORD,
+                )
+
             self.client = AsyncElasticsearch(
                 hosts=[{
                     "host": settings.ELASTICSEARCH_HOST,
                     "port": settings.ELASTICSEARCH_PORT,
                     "scheme": "http"
                 }],
-                basic_auth=(
-                    settings.ELASTICSEARCH_USERNAME,
-                    settings.ELASTICSEARCH_PASSWORD
-                ),
+                basic_auth=basic_auth,
             )
             # Test connection
             client = self._ensure_connected()
@@ -126,28 +130,26 @@ class ElasticsearchClient:
             dict with hits and metadata
         """
         try:
-            # First, filter by plate number (partial match)
-            # Then use cosine similarity on embedding field
-            search_body = {
-                "query": {
-                    "bool": {
-                        "filter": {
-                            "wildcard": {
-                                "plate_number": {
-                                    "value": f"*{plate_number}*",
-                                    "case_insensitive": True
-                                }
-                            }
+            knn = {
+                "field": "embedding",
+                "query_vector": query_embedding,
+                "k": top_k,
+                "num_candidates": top_k * 10,
+            }
+
+            if plate_number:
+                knn["filter"] = {
+                    "wildcard": {
+                        "plate_number": {
+                            "value": f"*{plate_number}*",
+                            "case_insensitive": True,
                         }
                     }
-                },
-                "knn": {
-                    "field": "embedding",
-                    "query_vector": query_embedding,
-                    "k": top_k,
-                    "num_candidates": top_k * 10
-                },
-                "size": top_k
+                }
+
+            search_body = {
+                "knn": knn,
+                "size": top_k,
             }
 
             client = self._ensure_connected()
@@ -160,8 +162,9 @@ class ElasticsearchClient:
             total_found = hits.get("total", {}).get("value", 0)
 
             logger.info(
-                f"Found {total_found} cars matching plate '{plate_number}', "
-                f"returning top {top_k} by embedding similarity"
+                f"Found {total_found} cars for plate filter "
+                f"'{plate_number or '<none>'}', returning top {top_k} "
+                "by embedding similarity"
             )
 
             return {
@@ -186,6 +189,32 @@ class ElasticsearchClient:
             return None
         except Exception as e:
             logger.error(f"Failed to get car {car_id}: {e}")
+            raise
+
+    async def get_car_by_plate(self, plate_number: str) -> dict[str, Any] | None:
+        """Retrieve the first car document with an exact plate number."""
+        try:
+            client = self._ensure_connected()
+            response = await client.search(
+                index=settings.ELASTICSEARCH_INDEX,
+                body={
+                    "query": {
+                        "term": {
+                            "plate_number": plate_number,
+                        }
+                    },
+                    "size": 1,
+                },
+            )
+            hits = response.get("hits", {}).get("hits", [])
+            if not hits:
+                return None
+
+            source = hits[0].get("_source", {})
+            source["_id"] = hits[0].get("_id")
+            return source
+        except Exception as e:
+            logger.error(f"Failed to get car by plate {plate_number}: {e}")
             raise
 
     async def delete_car(self, car_id: str) -> bool:

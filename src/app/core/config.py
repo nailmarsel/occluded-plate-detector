@@ -8,13 +8,15 @@ class Settings(BaseSettings):
     APP_NAME: str = "AutobahnCV - Car License Plate Search"
     DEBUG: bool = False
     API_PREFIX: str = "/api/v1"
+    ML_STRICT_STARTUP: bool = False
+    ML_ALLOW_HEURISTIC_PLATE_FALLBACK: bool = True
 
     # Elasticsearch
     ELASTICSEARCH_HOST: str = "localhost"
     ELASTICSEARCH_PORT: int = 9200
     ELASTICSEARCH_INDEX: str = "cars"
-    ELASTICSEARCH_USERNAME: str = "elastic"
-    ELASTICSEARCH_PASSWORD: str = "changeme"
+    ELASTICSEARCH_USERNAME: str = ""
+    ELASTICSEARCH_PASSWORD: str = ""
 
     # S3 / Garage Storage
     S3_ENDPOINT_URL: str = "http://localhost:8076"
@@ -25,21 +27,21 @@ class Settings(BaseSettings):
     S3_IMAGE_PREFIX: str = "cars/"
     S3_USE_SSL: bool = False
 
-    # Neuron 1: YOLO v8 - Car detection and cropping
-    NEURON1_CAR_DETECTION_MODEL: str = "yolov8x.pt"
+    # Neuron 1: YOLO - Car detection and cropping
+    NEURON1_CAR_DETECTION_MODEL: str = "yolo26n.pt"
     NEURON1_CONFIDENCE_THRESHOLD: float = 0.5
 
-    # Neuron 2: YOLO v8 - License plate detection and cropping
-    NEURON2_PLATE_DETECTION_MODEL: str = "yolov8_plate.pt"
+    # Neuron 2: YOLO - License plate detection and cropping
+    NEURON2_PLATE_DETECTION_MODEL: str = "license_plate_detector.pt"
     NEURON2_CONFIDENCE_THRESHOLD: float = 0.5
 
     # Neuron 3: OCR - License plate text recognition
-    NEURON3_OCR_MODEL: str = "ocr_model"
+    NEURON3_OCR_MODEL: str = "en"
     NEURON3_CONFIDENCE_THRESHOLD: float = 0.6
 
-    # Neuron 4: ResNet-108 - Embedding generation
-    NEURON4_RESNET_MODEL: str = "resnet108_embedding.pt"
-    NEURON4_EMBEDDING_DIM: int = 512
+    # Neuron 4: ResNet - Embedding generation
+    NEURON4_RESNET_MODEL: str = "resnet50"
+    NEURON4_EMBEDDING_DIM: int = 2048
 
     # Search
     SEARCH_TOP_K: int = 5

@@ -31,6 +31,7 @@ export default function IndexPage() {
 function SingleIndexForm() {
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState(null)
+    const [plateNumber, setPlateNumber] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
@@ -64,12 +65,12 @@ function SingleIndexForm() {
     }, [])
 
     const handleSubmit = async () => {
-        if (!imageFile) return
+        if (!imageFile || !plateNumber.trim()) return
 
         setLoading(true)
         setError(null)
         try {
-            const data = await indexCar(imageFile)
+            const data = await indexCar(imageFile, plateNumber.trim())
             setSuccess(data)
         } catch (err) {
             setError(err.message)
@@ -81,6 +82,7 @@ function SingleIndexForm() {
     const handleReset = () => {
         setImageFile(null)
         setImagePreview(null)
+        setPlateNumber('')
         setSuccess(null)
         setError(null)
     }
@@ -116,11 +118,26 @@ function SingleIndexForm() {
                     </div>
                 )}
 
+                <div className="form-group">
+                    <label className="form-label" htmlFor="index-plate">
+                        Plate Number <span style={{color: 'var(--error)'}}>*</span>
+                    </label>
+                    <input
+                        id="index-plate"
+                        className="form-input"
+                        type="text"
+                        placeholder="A864AA199"
+                        value={plateNumber}
+                        onChange={(e) => setPlateNumber(e.target.value)}
+                        required
+                    />
+                </div>
+
                 <div style={{display: 'flex', gap: '0.75rem', marginTop: '1rem'}}>
                     <button
                         className="btn btn-primary btn-block"
                         onClick={handleSubmit}
-                        disabled={!imageFile || loading}
+                        disabled={!imageFile || !plateNumber.trim() || loading}
                     >
                         {loading ? <span className="spinner"/> : '📤'}
                         {loading ? 'Processing...' : 'Index Car'}
@@ -146,19 +163,19 @@ function SingleIndexForm() {
 }
 
 function BatchIndexForm() {
-    const [folderPath, setFolderPath] = useState('')
+    const [archiveFile, setArchiveFile] = useState(null)
     const [prefix, setPrefix] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [results, setResults] = useState(null)
 
     const handleSubmit = async () => {
-        if (!folderPath.trim()) return
+        if (!archiveFile) return
 
         setLoading(true)
         setError(null)
         try {
-            const data = await batchIndexCars(folderPath.trim(), prefix.trim() || null)
+            const data = await batchIndexCars(archiveFile, prefix.trim() || null)
             setResults(data)
         } catch (err) {
             setError(err.message)
@@ -170,20 +187,24 @@ function BatchIndexForm() {
     return (
         <>
             <div className="card">
-                <h2 className="card-title">Batch Index from Folder</h2>
+                <h2 className="card-title">Batch Index from ZIP</h2>
                 <p style={{color: 'var(--gray-500)', marginBottom: '1rem'}}>
-                    Enter the absolute path to a folder containing car photos. All JPEG and PNG files will be processed.
+                    Upload a ZIP archive. Use each plate number as the image
+                    filename, for example A864AA199.jpg.
                 </p>
 
                 <div className="form-group">
-                    <label className="form-label" htmlFor="folder-path">Folder Path</label>
+                    <label className="form-label" htmlFor="batch-zip">ZIP Archive</label>
                     <input
-                        id="folder-path"
+                        id="batch-zip"
                         className="form-input"
-                        type="text"
-                        placeholder="/path/to/car/photos"
-                        value={folderPath}
-                        onChange={(e) => setFolderPath(e.target.value)}
+                        type="file"
+                        accept=".zip,application/zip"
+                        onChange={(e) => {
+                            setArchiveFile(e.target.files[0] || null)
+                            setResults(null)
+                            setError(null)
+                        }}
                     />
                 </div>
 
@@ -204,7 +225,7 @@ function BatchIndexForm() {
                 <button
                     className="btn btn-primary btn-block"
                     onClick={handleSubmit}
-                    disabled={!folderPath.trim() || loading}
+                    disabled={!archiveFile || loading}
                 >
                     {loading ? <span className="spinner"/> : '📦'}
                     {loading ? 'Processing...' : 'Start Batch Index'}
@@ -239,6 +260,7 @@ function BatchIndexForm() {
                                 <thead>
                                 <tr>
                                     <th>File</th>
+                                    <th>Plate</th>
                                     <th>Car ID</th>
                                     <th>Status</th>
                                     <th>Error</th>
@@ -248,6 +270,7 @@ function BatchIndexForm() {
                                 {results.results.map((r, i) => (
                                     <tr key={i}>
                                         <td>{r.filename}</td>
+                                        <td>{r.plate_number || '—'}</td>
                                         <td>{r.car_id}</td>
                                         <td>
                         <span className={`badge ${r.status === 'indexed' ? 'badge-success' : 'badge-error'}`}>

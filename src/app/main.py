@@ -22,16 +22,22 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting AutobahnCV application...")
 
-    # Connect to S3/Garage
-    s3_client.connect()
+    try:
+        # Connect to S3/Garage
+        s3_client.connect()
 
-    # Connect to Elasticsearch
-    await es_client.connect()
+        # Connect to Elasticsearch
+        await es_client.connect()
 
-    # Initialize image processing pipeline (neural networks)
-    global processing_pipeline
-    processing_pipeline = ImageProcessingPipeline()
-    await processing_pipeline.initialize()
+        # Initialize image processing pipeline (neural networks)
+        global processing_pipeline
+        processing_pipeline = ImageProcessingPipeline()
+        await processing_pipeline.initialize()
+        app.state.processing_pipeline = processing_pipeline
+    except Exception:
+        await es_client.close()
+        s3_client.close()
+        raise
 
     logger.info("AutobahnCV application started successfully")
 

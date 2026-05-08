@@ -18,11 +18,8 @@ elasticsearch[async]>=8.11.1,<9.0.0
 # S3 / Garage Storage
 boto3>=1.34.0
 
-# Neural Networks (uncomment and install when ready to use)
-# ultralytics>=8.1.0  # YOLO v8
-# torch>=2.1.2         # PyTorch
-# torchvision>=0.16.2  # Torchvision
-# easyocr>=1.7.1       # OCR (or your preferred OCR library)
+# Neural networks are optional for local/production inference.
+# Install with: pip install -r requirements-ml.txt
 
 # HTTP Client
 httpx>=0.26.0
