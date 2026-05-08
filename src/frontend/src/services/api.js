@@ -48,13 +48,3 @@ export async function batchIndexCars(folderPath, prefix) {
 
     return response.json();
 }
-
-export async function getHealth() {
-    const response = await fetch(`${API_BASE}/api/v1/health`);
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch health status');
-    }
-
-    return response.json();
-}

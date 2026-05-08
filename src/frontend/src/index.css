@@ -383,27 +383,6 @@ input, select, textarea {
     border: 1px solid #86efac;
 }
 
-/* Health */
-.health-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
-
-.health-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    background: var(--gray-50);
-    border-radius: var(--radius);
-}
-
-.health-label {
-    font-weight: 500;
-    color: var(--gray-600);
-}
-
 /* Tabs */
 .tabs {
     display: flex;

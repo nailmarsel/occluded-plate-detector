@@ -1,7 +1,6 @@
 import {NavLink, Route, Routes} from 'react-router-dom'
 import SearchPage from './components/SearchPage'
 import IndexPage from './components/IndexPage'
-import HealthPage from './components/HealthPage'
 
 export default function App() {
     return (
@@ -18,9 +17,6 @@ export default function App() {
                         <NavLink to="/index" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
                             Index
                         </NavLink>
-                        <NavLink to="/health" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
-                            Health
-                        </NavLink>
                     </nav>
                 </div>
             </header>
@@ -28,7 +24,6 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<SearchPage/>}/>
                 <Route path="/index" element={<IndexPage/>}/>
-                <Route path="/health" element={<HealthPage/>}/>
             </Routes>
         </>
     )
