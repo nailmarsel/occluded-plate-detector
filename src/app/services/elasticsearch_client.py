@@ -126,28 +126,26 @@ class ElasticsearchClient:
             dict with hits and metadata
         """
         try:
-            # First, filter by plate number (partial match)
-            # Then use cosine similarity on embedding field
-            search_body = {
-                "query": {
-                    "bool": {
-                        "filter": {
-                            "wildcard": {
-                                "plate_number": {
-                                    "value": f"*{plate_number}*",
-                                    "case_insensitive": True
-                                }
-                            }
+            knn = {
+                "field": "embedding",
+                "query_vector": query_embedding,
+                "k": top_k,
+                "num_candidates": top_k * 10,
+            }
+
+            if plate_number:
+                knn["filter"] = {
+                    "wildcard": {
+                        "plate_number": {
+                            "value": f"*{plate_number}*",
+                            "case_insensitive": True,
                         }
                     }
-                },
-                "knn": {
-                    "field": "embedding",
-                    "query_vector": query_embedding,
-                    "k": top_k,
-                    "num_candidates": top_k * 10
-                },
-                "size": top_k
+                }
+
+            search_body = {
+                "knn": knn,
+                "size": top_k,
             }
 
             client = self._ensure_connected()
@@ -160,8 +158,9 @@ class ElasticsearchClient:
             total_found = hits.get("total", {}).get("value", 0)
 
             logger.info(
-                f"Found {total_found} cars matching plate '{plate_number}', "
-                f"returning top {top_k} by embedding similarity"
+                f"Found {total_found} cars for plate filter "
+                f"'{plate_number or '<none>'}', returning top {top_k} "
+                "by embedding similarity"
             )
 
             return {

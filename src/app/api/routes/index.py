@@ -2,9 +2,10 @@ import io
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
+from app.api.dependencies import get_processing_pipeline
 from app.core.config import settings
 from app.core.enums import ErrorCode
 from app.core.logging import logger
@@ -40,7 +41,10 @@ class BatchIndexRequest(BaseModel):
 
 
 async def _process_and_index_single_image(
-    image_data: bytes, car_id: str
+    image_data: bytes,
+    car_id: str,
+    pipeline: ImageProcessingPipeline,
+    plate_number: str | None = None,
 ) -> IndexResponse:
     """
     Core logic: process image through the neural pipeline and index it.
@@ -52,8 +56,9 @@ async def _process_and_index_single_image(
     Returns:
         IndexResponse with indexing details
     """
-    pipeline = ImageProcessingPipeline()
-    result = await pipeline.process_for_indexing(image_data)
+    result = await pipeline.process_for_indexing(
+        image_data, plate_number=plate_number
+    )
 
     plate_number = result["plate_number"]
     embedding = result["embedding"]
@@ -115,10 +120,15 @@ async def _process_and_index_single_image(
     """
 )
 async def index_car(
+    request: Request,
     image: UploadFile = File(
         ...,
         description="Car photo to index (JPEG, PNG)"
-    )
+    ),
+    plate_number: str | None = Form(
+        None,
+        description="Known plate number. Skips plate detection and OCR if provided.",
+    ),
 ) -> IndexResponse:
     """
     Index a car in Elasticsearch for future search queries.
@@ -149,7 +159,10 @@ async def index_car(
 
         logger.info(f"Indexing car: {car_id}, image: {image.filename}")
 
-        return await _process_and_index_single_image(image_data, car_id)
+        pipeline = get_processing_pipeline(request)
+        return await _process_and_index_single_image(
+            image_data, car_id, pipeline, plate_number=plate_number
+        )
 
     except HTTPException:
         raise
@@ -182,19 +195,20 @@ async def index_car(
     """
 )
 async def batch_index_cars(
-    request: BatchIndexRequest
+    request: Request,
+    batch_request: BatchIndexRequest
 ) -> BatchIndexResponse:
     """
     Batch index all car photos from a local folder.
     """
-    folder = Path(request.folder_path)
+    folder = Path(batch_request.folder_path)
 
     if not folder.exists():
         raise HTTPException(
             status_code=400,
             detail={
                 "error_code": "INVALID_FOLDER",
-                "message": f"Folder does not exist: {request.folder_path}"
+                "message": f"Folder does not exist: {batch_request.folder_path}"
             }
         )
 
@@ -203,7 +217,7 @@ async def batch_index_cars(
             status_code=400,
             detail={
                 "error_code": "INVALID_FOLDER",
-                "message": f"Path is not a directory: {request.folder_path}"
+                "message": f"Path is not a directory: {batch_request.folder_path}"
             }
         )
 
@@ -219,7 +233,7 @@ async def batch_index_cars(
             status_code=400,
             detail={
                 "error_code": "NO_IMAGES",
-                "message": f"No images found in: {request.folder_path}"
+                "message": f"No images found in: {batch_request.folder_path}"
             }
         )
 
@@ -233,7 +247,7 @@ async def batch_index_cars(
 
     for i, image_file in enumerate(image_files):
         filename = image_file.name
-        prefix = request.prefix or ""
+        prefix = batch_request.prefix or ""
         car_id = f"{prefix}_{i}" if prefix else str(uuid.uuid4())
 
         try:
@@ -245,13 +259,15 @@ async def batch_index_cars(
             if not image_data:
                 raise RuntimeError("Empty image file")
 
-            await _process_and_index_single_image(image_data, car_id)
+            pipeline = get_processing_pipeline(request)
+            index_result = await _process_and_index_single_image(
+                image_data, car_id, pipeline
+            )
 
             results.append(BatchIndexResult(
                 car_id=car_id,
                 filename=filename,
-                # Will be set in _process_and_index_single_image.
-                plate_number="extracted",
+                plate_number=index_result.plate_number,
                 status="indexed"
             ))
             succeeded += 1

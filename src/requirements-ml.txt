@@ -1,0 +1,6 @@
+# Optional runtime dependencies for neural inference.
+# Keep these separate from requirements.txt so CI tests and lint stay light.
+ultralytics>=8.3.0
+torch>=2.1.2
+torchvision>=0.16.2
+easyocr>=1.7.1

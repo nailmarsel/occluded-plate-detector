@@ -31,6 +31,7 @@ export default function IndexPage() {
 function SingleIndexForm() {
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState(null)
+    const [plateNumber, setPlateNumber] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
@@ -69,7 +70,7 @@ function SingleIndexForm() {
         setLoading(true)
         setError(null)
         try {
-            const data = await indexCar(imageFile)
+            const data = await indexCar(imageFile, plateNumber.trim())
             setSuccess(data)
         } catch (err) {
             setError(err.message)
@@ -81,6 +82,7 @@ function SingleIndexForm() {
     const handleReset = () => {
         setImageFile(null)
         setImagePreview(null)
+        setPlateNumber('')
         setSuccess(null)
         setError(null)
     }
@@ -115,6 +117,20 @@ function SingleIndexForm() {
                         <img src={imagePreview} alt="Car to index"/>
                     </div>
                 )}
+
+                <div className="form-group">
+                    <label className="form-label" htmlFor="index-plate">
+                        Plate Number
+                    </label>
+                    <input
+                        id="index-plate"
+                        className="form-input"
+                        type="text"
+                        placeholder="A864AA199"
+                        value={plateNumber}
+                        onChange={(e) => setPlateNumber(e.target.value)}
+                    />
+                </div>
 
                 <div style={{display: 'flex', gap: '0.75rem', marginTop: '1rem'}}>
                     <button

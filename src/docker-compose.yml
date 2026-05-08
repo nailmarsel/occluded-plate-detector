@@ -76,11 +76,19 @@ services:
       - |
         echo 'Waiting for Elasticsearch to be ready...'
         sleep 10
-        echo 'Creating Elasticsearch index mapping...'
-        curl -s -X PUT 'http://elasticsearch:9200/cars' \
-          -u elastic:changeme \
-          -H 'Content-Type: application/json' \
-          -d '{
+        echo 'Checking Elasticsearch index mapping...'
+        if curl -fs -u elastic:changeme \
+          'http://elasticsearch:9200/cars/_mapping' \
+          | grep -q '"dims":2048'; then
+          echo 'Elasticsearch index mapping is already current.'
+        else
+          echo 'Recreating Elasticsearch index mapping...'
+          curl -s -X DELETE 'http://elasticsearch:9200/cars' \
+            -u elastic:changeme || true
+          curl -s -X PUT 'http://elasticsearch:9200/cars' \
+            -u elastic:changeme \
+            -H 'Content-Type: application/json' \
+            -d '{
             "settings": {
               "number_of_shards": 1,
               "number_of_replicas": 0
@@ -88,10 +96,10 @@ services:
             "mappings": {
               "properties": {
                 "car_id": { "type": "keyword" },
-                "plate_number": { "type": "text" },
+                "plate_number": { "type": "keyword" },
                 "embedding": {
                   "type": "dense_vector",
-                  "dims": 512,
+                  "dims": 2048,
                   "index": true,
                   "similarity": "cosine"
                 },
@@ -101,8 +109,9 @@ services:
               }
             }
           }'
-        echo ''
-        echo 'Elasticsearch index mapping created successfully!'
+          echo ''
+          echo 'Elasticsearch index mapping created successfully!'
+        fi
     networks:
       - autobahncv-network
 
@@ -122,7 +131,6 @@ services:
       - autobahncv-network
     profiles:
       - monitoring
-      - full
 
   # AutobahnCV Application
   app:
@@ -132,6 +140,8 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=False
+      - ML_STRICT_STARTUP=False
+      - ML_ALLOW_HEURISTIC_PLATE_FALLBACK=True
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
       - ELASTICSEARCH_USERNAME=elastic
@@ -142,6 +152,9 @@ services:
       - S3_BUCKET_NAME=autobahncv
       - S3_REGION=us-east-1
       - S3_USE_SSL=False
+      - NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+    volumes:
+      - ./models:/app/models:ro
     depends_on:
       elasticsearch:
         condition: service_healthy
