@@ -48,6 +48,7 @@ class TestIndexEndpoint:
         """Test index rejects non-image files."""
         response = TestClient(app).post(
             "/api/v1/index",
+            data={"plate_number": "A864AA199"},
             files={"image": ("test.txt", b"not an image", "text/plain")}
         )
         assert response.status_code == 400
@@ -56,6 +57,7 @@ class TestIndexEndpoint:
         """Test index rejects empty files."""
         response = TestClient(app).post(
             "/api/v1/index",
+            data={"plate_number": "A864AA199"},
             files={"image": ("empty.jpg", b"", "image/jpeg")}
         )
         assert response.status_code == 400
