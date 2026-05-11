@@ -1,19 +1,22 @@
-# Model Artifacts
+# Model Artifacts and Registry
 
-Веса моделей хранятся локально.
+Веса моделей хранятся локально. Current/candidate versions, training data,
+validation metrics, drift baselines, and promotion rules are described in
+[`../../specs/Monitoring_Retraining.md`](../../specs/Monitoring_Retraining.md).
 
 ## Расположение
 
 Все файлы весов должны находиться в:
 
 ```text
-./src/model_service/models/
+./src/models/
 ```
 
 ## Файлы моделей
 
-| Filename | Назначение |
-|----------|-----------|
-| `car_detector.safetensors` | Детекция автомобиля на изображении |
-| `plate_ocr.safetensors` | OCR: распознавание символов номерного знака |
-| `car_embedder.safetensors` | Построение эмбеддинга изображения автомобиля |
+| Filename                    | Назначение                                   |
+|-----------------------------|----------------------------------------------|
+| `car_detector.pt`           | Детекция автомобиля на изображении           |
+| `license_plate_detector.pt` | Детекция номерного знака                     |
+| `plate_ocr.pt`              | OCR: распознавание символов номерного знака  |
+| `car_embedder.pt`           | Построение эмбеддинга изображения автомобиля |
