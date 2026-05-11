@@ -161,7 +161,8 @@ services:
     environment:
       - DEBUG=False
       - ML_STRICT_STARTUP=False
-      - ML_ALLOW_HEURISTIC_PLATE_FALLBACK=True
+      - ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False
+      - ML_DEBUG_IMAGE_DIR=/tmp/autobahncv-debug
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
       - ELASTICSEARCH_USERNAME=
@@ -173,6 +174,8 @@ services:
       - S3_REGION=us-east-1
       - S3_USE_SSL=False
       - NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+      - NEURON3_OCR_MODEL=en,ru
+      - NEURON3_CONFIDENCE_THRESHOLD=0.45
     volumes:
       - ./models:/app/models:ro
     depends_on:

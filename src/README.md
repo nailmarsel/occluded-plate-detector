@@ -59,6 +59,10 @@ The CI/CD workflows for this app live at the repository root in
 `.github/workflows/`, because GitHub Actions only runs workflows from that
 location.
 
+The service monitoring, model monitoring, drift signals, feedback loop, model
+registry, and retraining policy are documented in
+[`../specs/Monitoring_Retraining.md`](../specs/Monitoring_Retraining.md).
+
 ## Setup & Installation
 
 ### Prerequisites
@@ -136,6 +140,50 @@ Update the neuron implementations in `app/neurons/` with your actual models:
 - **Neuron 4**: ResNet-108 for embedding generation
 
 Update model paths in `.env` accordingly. Each neuron class has `TODO` comments showing where to add your code.
+
+For Russian license plates, do not rely on the heuristic plate crop fallback in
+production. License plates are not part of the COCO classes used by the default
+YOLO vehicle model, so `NEURON2_PLATE_DETECTION_MODEL` must point to custom
+license-plate detector weights trained or fine-tuned on Russian plate images.
+Set `ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False` when you want startup or inference
+to fail loudly if those weights are missing.
+
+Recommended detector path:
+
+```env
+NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False
+```
+
+For best Russian results, train or fine-tune an Ultralytics YOLO detector on the
+`AY000554/Car_plate_detecting_dataset` Hugging Face dataset. It contains about
+25.5K Russian car images with YOLO-format plate boxes and matches this app's
+single-class plate detector interface. Generic international plate detectors can
+work as a quick smoke test, but they are less reliable on Russian plate layouts,
+camera angles, and local image conditions.
+
+Training code lives in `../ml/plate_detector`. Run `make train` there to produce
+`models/license_plate_detector.pt` for this Docker app.
+
+To inspect detection quality during search, set:
+
+```env
+ML_DEBUG_IMAGE_DIR=/tmp/autobahncv-debug
+```
+
+The pipeline will save car and plate crops there. If plate crops do not tightly
+contain the number, fix or retrain the detector before tuning OCR.
+
+The OCR post-processing expects Russian private passenger plate structure after
+normalization, for example `E507MO136`:
+
+```text
+letter + 3 digits + 2 letters + 2-3 digit region
+```
+
+If EasyOCR splits the crop into fragments such as `E507MO` and `136`, the
+pipeline joins left-to-right fragments and prefers a valid full Russian plate
+over a short high-confidence region fragment.
 
 ## Running the Application
 

@@ -1,6 +1,8 @@
 import io
 import re
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from PIL import Image
 
@@ -32,6 +34,18 @@ CYRILLIC_TO_LATIN_PLATE_CHARS = str.maketrans(
 def normalize_plate_number(plate_number: str) -> str:
     normalized = plate_number.upper().translate(CYRILLIC_TO_LATIN_PLATE_CHARS)
     return PLATE_CHARS_PATTERN.sub("", normalized)
+
+
+def _save_debug_image(image: Image.Image | None, name: str) -> None:
+    if image is None or not settings.ML_DEBUG_IMAGE_DIR:
+        return
+
+    try:
+        debug_dir = Path(settings.ML_DEBUG_IMAGE_DIR)
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        image.save(debug_dir / f"{uuid4().hex}_{name}.jpg", quality=92)
+    except Exception as exc:
+        logger.warning("Failed to save debug image '%s': %s", name, exc)
 
 
 class ImageProcessingPipeline:
@@ -138,6 +152,7 @@ class ImageProcessingPipeline:
             self._ensure_neuron_ready("car_detector")
             car_result = await self.car_detector.predict(image)
             cropped_car = car_result["cropped_car_image"]
+            _save_debug_image(cropped_car, "car_crop")
             logger.info(f"Car detected with confidence: {car_result['confidence']}")
 
             cropped_plate = None
@@ -154,6 +169,7 @@ class ImageProcessingPipeline:
                 plate_result = await self.plate_detector.predict(cropped_car)
                 cropped_plate = plate_result["cropped_plate_image"]
                 plate_bbox = plate_result["bbox"]
+                _save_debug_image(cropped_plate, "plate_crop")
                 logger.info(
                     f"Plate detected with confidence: {plate_result['confidence']}"
                 )
