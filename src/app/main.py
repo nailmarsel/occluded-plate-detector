@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes import api_router
 from app.core.config import settings
@@ -153,6 +154,8 @@ future releases.
     # Custom OpenAPI schema
     app.openapi = lambda: custom_openapi_schema(app)
 
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+    
     # CORS middleware
     app.add_middleware(
         CORSMiddleware,

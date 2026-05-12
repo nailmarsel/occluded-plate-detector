@@ -6,6 +6,18 @@ from app.core.enums import ErrorCode
 from app.core.logging import logger
 from app.models.schemas import ErrorResponse, SearchResponse, SearchResults
 from app.services.elasticsearch_client import es_client
+from app.monitoring.metrics import (
+    images_processed_total,
+    input_errors_total,
+    neuron_failures_total,
+    plate_fallback_total,
+    confidence_car,
+    confidence_plate,
+    confidence_ocr,
+    plate_length,
+    image_size_bytes,
+    search_similarity_score
+)
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -52,6 +64,10 @@ async def search_similar_cars(
 
         # Read image data
         image_data = await image.read()
+
+        image_size_bytes.observe(len(image_data))
+        images_processed_total.labels(endpoint="/search").inc()
+
         if not image_data:
             raise HTTPException(
                 status_code=400,
@@ -69,6 +85,16 @@ async def search_similar_cars(
 
         plate_number = result["plate_number"]
         embedding = result["embedding"]
+
+        if hasattr(result, "car_confidence"):
+            confidence_car.observe(result["car_confidence"])
+        if hasattr(result, "plate_confidence"):
+            confidence_plate.observe(result["plate_confidence"])
+        if hasattr(result, "ocr_confidence"):
+            confidence_ocr.observe(result["ocr_confidence"])
+
+        plate_number = result.get("plate_number", "")
+        plate_length.observe(len(plate_number))
 
         if plate_number:
             logger.info(f"Searching for cars with plate: '{plate_number}'")
@@ -99,6 +125,9 @@ async def search_similar_cars(
                 image_url=image_url
             ))
 
+        if formatted_results:
+            search_similarity_score.observe(formatted_results[0].similarity_score)
+    
         return SearchResults(
             results=formatted_results,
             detected_plate=plate_number,

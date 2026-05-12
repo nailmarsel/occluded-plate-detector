@@ -21,19 +21,27 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements-ml.txt
 
 # Pre-download default model weights during image build instead of startup.
-RUN mkdir -p "$YOLO_CONFIG_DIR" "$TORCH_HOME" "$EASYOCR_MODULE_PATH" \
-    && python - <<'PY'
+RUN mkdir -p /app/models && python - <<'PY'
+import torch
 from ultralytics import YOLO
 from torchvision import models
 import easyocr
 
-YOLO("yolo26n.pt")
-models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-easyocr.Reader(["en"], gpu=False)
+model = YOLO("yolo26n.pt")
+model_path = "/app/models/yolo26n.pt"
+model.save(model_path)          # или шляпа: torch.save(model.model.state_dict(), model_path)
+
+resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+torch.save(resnet.state_dict(), "/app/models/resnet50.pth")
+
+reader = easyocr.Reader(["en"], gpu=False)
 PY
+
+RUN pip install --no-cache-dir prometheus-fastapi-instrumentator mlflow
 
 # Copy application code
 COPY . .
+COPY scripts/register_models.py /app/scripts/register_models.py
 
 # Create non-root user
 RUN useradd -m appuser \

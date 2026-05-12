@@ -8,6 +8,12 @@ services:
       - xpack.security.enabled=false
       - xpack.security.enrollment.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.routing.allocation.disk.watermark.low.max_headroom=200gb
+      - cluster.routing.allocation.disk.watermark.high.max_headroom=150gb
+      - cluster.routing.allocation.disk.watermark.flood_stage.max_headroom=100gb
+      - cluster.routing.allocation.disk.watermark.flood_stage.frozen.max_headroom=20gb
+      - cluster.routing.allocation.disk.watermark.high=95%
+      - cluster.routing.allocation.disk.watermark.flood_stage=98%
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -126,6 +132,26 @@ services:
     profiles:
       - monitoring
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: autobahncv-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - autobahncv-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: autobahncv-grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - autobahncv-network
+
   # AutobahnCV Application
   app:
     build: .
@@ -173,11 +199,28 @@ services:
       - autobahncv-network
     profiles:
       - full
-
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    container_name: autobahncv-mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:///mlflow.db
+      --default-artifact-root /mlflow-artifacts
+      --host 0.0.0.0
+      --port 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow-artifacts
+    networks:
+      - autobahncv-network
+      
 volumes:
   es_data:
     driver: local
   minio_data:
+    driver: local
+  mlflow_data:
     driver: local
 
 networks:

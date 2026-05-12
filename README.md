@@ -48,11 +48,49 @@ The system is designed using a modular architecture:
   Outputs the 5 most similar images
 • **API Layer**  
   Provides external access to the system
-
 ________________________________________
-### 5. Execution Flow
+### 5. Observability & Monitoring
+
+The project includes a full observability stack for tracking service health,
+data quality, model predictions, and user feedback.
+
+**Metrics Collection**
+- `prometheus-fastapi-instrumentator` + `prometheus-client` – service‑level
+  metrics (throughput, latency, error rate) and custom metrics (confidence,
+  fallback, plate length, feedback).
+- Application exposes metrics at `/metrics` in Prometheus format.
+- **Prometheus** scrapes `/metrics` every 15 seconds and stores time series.
+
+**Dashboards**
+- **Grafana** visualises the metrics. Four dashboards are created:
+  - **Service Metrics** – Throughput, Error Rate, p95 Latency, Availability.
+  - **Input Data** – detector confidence, plate length distribution,
+    image size, validation errors.
+  - **Model Predictions** – fallback rate, similarity score, similarity heatmap.
+  - **Business Feedback** – user actions (confirm/reject/correct), confirmation rate.
+
+**Drift & Data Profiling**
+- Operational drift is monitored via Prometheus alerts (confidence drop,
+  error increase, plate length distribution shift).
+- Detailed analysis uses **Elasticsearch** indices `inference-logs` and
+  `feedback-logs`, which store every prediction and user action for
+  distribution comparison across time windows.
+
+**Model Versioning**
+- Model artifacts are stored in the `models/` directory and versioned
+  via Git tags and Docker image tags.
+- For production, MLflow or DVC is recommended for experiment tracking and
+  model registry.
+
+**Audit & Retraining Pipeline**
+- Audit is triggered manually based on alerts and dashboard signals.
+- Retraining uses accumulated corrected examples from `feedback-logs` and new
+  labelled data, executed via a manual script.
+- Future automation can be implemented through a CI/CD pipeline.
+________________________________________
+### 6. Execution Flow
  ________________________________________
-### 6. Quick Start
+### 7. Quick Start
 ________________________________________
 
 # Детектор перекрытых номерных знаков (Occluded Plate Detector)
@@ -107,9 +145,48 @@ ________________________________________
   Возвращает 5 наиболее похожих изображений
 • **API-слой (API Layer)**  
   Обеспечивает внешний доступ к системе
-
 ________________________________________
-### 5. Execution Flow
+### 5. Observability & Monitoring
+
+В проекте реализован полный контур наблюдаемости на основе Prometheus, Grafana и Elasticsearch.
+
+**Сбор метрик**
+- `prometheus-fastapi-instrumentator` + `prometheus-client` — сервисные метрики 
+  (throughput, latency, error rate) и кастомные метрики (уверенность модели, 
+  fallback, длина номера, обратная связь).
+- Приложение отдаёт метрики на эндпоинте `/metrics` в формате Prometheus.
+- **Prometheus** опрашивает `/metrics` каждые 15 секунд и сохраняет временные ряды.
+
+**Дашборды**
+- **Grafana** визуализирует метрики. Создано четыре дашборда:
+  - **Service Metrics** – Throughput, Error Rate, p95 Latency, Availability.
+  - **Input Data** – уверенность детекторов, распределение длины номера, 
+    размер изображений, ошибки валидации.
+  - **Model Predictions** – доля fallback, средний similarity score, 
+    heatmap похожести.
+  - **Business Feedback** – действия пользователей (подтверждение, 
+    отклонение, исправление), доля подтверждений.
+
+**Drift и анализ данных**
+- Оперативный drift отслеживается через алерты Prometheus (падение 
+  уверенности, рост ошибок, изменение распределения длины номера).
+- Детальный анализ выполняется в **Elasticsearch** — индексы `inference-logs` 
+  и `feedback-logs` сохраняют все предсказания и действия пользователей, 
+  позволяя сравнивать распределения за разные периоды.
+
+**Версионирование моделей**
+- Артефакты моделей хранятся в директории `models/`, версионируются 
+  через Git-теги и Docker-образы.
+- Для продакшна рекомендуется использовать MLflow или DVC для 
+  трекинга экспериментов и реестра моделей.
+
+**Audit и Retraining Pipeline**
+- Аудит запускается вручную на основе алертов и данных дашбордов.
+- Переобучение использует накопленные исправленные примеры из 
+  `feedback-logs` и новые размеченные данные; выполняется вручную скриптом.
+- В перспективе возможна автоматизация через CI/CD пайплайн.
+________________________________________
+### 6. Execution Flow
  ________________________________________
-### 6. Quick Start
+### 7. Quick Start
 ________________________________________

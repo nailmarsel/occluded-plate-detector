@@ -14,6 +14,17 @@ from app.models.schemas import ErrorResponse, IndexResponse
 from app.services.elasticsearch_client import es_client
 from app.services.pipeline import ImageProcessingPipeline, normalize_plate_number
 from app.services.s3_client import s3_client
+from app.monitoring.metrics import (
+    images_processed_total,
+    input_errors_total,
+    neuron_failures_total,
+    plate_fallback_total,
+    confidence_car,
+    confidence_plate,
+    confidence_ocr,
+    plate_length,
+    image_size_bytes,
+)
 
 router = APIRouter(prefix="/index", tags=["index"])
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
@@ -69,7 +80,16 @@ async def _process_and_index_single_image(
         image_data, plate_number=plate_number
     )
 
-    plate_number = result["plate_number"]
+    if "car_confidence" in result:
+        confidence_car.observe(result["car_confidence"])
+    if "plate_confidence" in result:
+        confidence_plate.observe(result["plate_confidence"])
+    if "ocr_confidence" in result:
+        confidence_ocr.observe(result["ocr_confidence"])
+
+
+    plate_number = result.get("plate_number", "")
+    plate_length.observe(len(plate_number))
     if not plate_number:
         raise RuntimeError("Cannot index a car without a plate number")
 
@@ -177,6 +197,9 @@ async def index_car(
                 }
             )
 
+        image_size_bytes.observe(len(image_data))
+        images_processed_total.labels(endpoint="/index").inc()
+
         car_id = str(uuid.uuid4())
 
         logger.info(f"Indexing car: {car_id}, image: {image.filename}")
@@ -187,6 +210,8 @@ async def index_car(
         )
 
     except HTTPException:
+        if "Invalid image format" in str(e.detail) or "Empty image" in str(e.detail):
+            input_errors_total.labels(reason="invalid_format_or_empty").inc()
         raise
     except Exception as e:
         logger.error(f"Indexing failed for car {car_id}: {e}")
@@ -276,8 +301,9 @@ async def batch_index_cars(
             )
 
             image_data = image_file.read_bytes()
-            if not image_data:
-                raise RuntimeError("Empty image file")
+            if image_data:
+                image_size_bytes.observe(len(image_data))
+            images_processed_total.labels(endpoint="/index").inc()
 
             pipeline = get_processing_pipeline(request)
             index_result = await _process_and_index_single_image(
@@ -301,6 +327,7 @@ async def batch_index_cars(
                 error=str(e)
             ))
             failed += 1
+            neuron_failures_total.labels(stage="batch_processing").inc()
 
     logger.info(
         f"Batch indexing complete: {succeeded} succeeded, {failed} failed"
@@ -416,8 +443,9 @@ async def batch_index_zip(
                 )
 
             image_data = zip_archive.read(info)
-            if not image_data:
-                raise RuntimeError("Empty image file")
+            if image_data:
+                image_size_bytes.observe(len(image_data))
+            images_processed_total.labels(endpoint="/index").inc()
 
             index_result = await _process_and_index_single_image(
                 image_data,

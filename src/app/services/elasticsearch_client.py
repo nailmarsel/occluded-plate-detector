@@ -66,6 +66,9 @@ class ElasticsearchClient:
         except Exception:
             return False
 
+    async def index_document(self, index: str, body: dict):
+        return await self.client.index(index=index, body=body)
+
     async def index_car(
         self,
         car_id: str,
