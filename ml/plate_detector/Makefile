@@ -1,7 +1,7 @@
 PYTHON ?= python3
 DATASET_REPO ?= AY000554/Car_plate_detecting_dataset
 BASE_MODEL ?= yolo11n.pt
-EPOCHS ?= 3
+EPOCHS ?= 80
 IMGSZ ?= 960
 BATCH ?= 16
 DEVICE ?= auto
