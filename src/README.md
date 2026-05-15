@@ -116,6 +116,9 @@ docker compose ps
 | MinIO API | `http://localhost:9000` | S3-compatible image storage |
 | MinIO Console | `http://localhost:9001` | Web UI for browsing buckets |
 | Kibana | `http://localhost:5601` | ES visualization (optional) |
+| Prometheus | `http://localhost:9090` | Metrics scraping and PromQL |
+| Grafana | `http://localhost:3001` | Monitoring dashboards |
+| MLflow | `http://localhost:5000` | Experiment and model registry UI |
 
 To start with Kibana:
 
@@ -123,9 +126,10 @@ To start with Kibana:
 docker compose --profile monitoring up -d
 ```
 
-The `monitoring` profile starts Elasticsearch, MinIO, setup jobs, and Kibana.
-It does not start the FastAPI app or frontend. Use the `full` profile when you
-want the application to load models and serve API/UI traffic.
+By default, Compose starts Elasticsearch, MinIO, setup jobs, Prometheus,
+Grafana, and MLflow. The `monitoring` profile additionally starts Kibana. It
+does not start the FastAPI app or frontend. Use the `full` profile when you want
+the application to load models and serve API/UI traffic.
 
 ### 6. Run the full stack (including the app)
 
@@ -248,6 +252,7 @@ Once running, the API docs are available at:
 | `/openapi.json`        | Raw OpenAPI 3.1 JSON spec             |
 | `/api/v1/openapi/json` | Download OpenAPI JSON spec            |
 | `/api/v1/openapi/yaml` | Download OpenAPI YAML spec            |
+| `/metrics`             | Prometheus metrics endpoint           |
 
 ## API Endpoints
 
@@ -301,6 +306,7 @@ Add a car to the system. The image is processed, uploaded to MinIO, and indexed 
 **Request:** Multipart form
 
 - `image`: Car photo (JPEG/PNG)
+- `plate_number`: Known plate number. Required for indexing.
 
 **Response:**
 
@@ -375,6 +381,26 @@ Check the health status of the application and its dependencies.
 }
 ```
 
+### 5. Submit Search Feedback
+
+**POST** `/api/v1/feedback`
+
+Record user feedback for monitoring and later retraining.
+
+**Request:** JSON body
+
+```json
+{
+  "result_id": "car_123",
+  "action": "correct",
+  "corrected_plate": "A888AA977",
+  "comment": "OCR missed two digits",
+  "disputed": false
+}
+```
+
+Allowed `action` values are `confirm`, `reject`, and `correct`.
+
 ## Usage Examples
 
 ### Search for similar cars (curl)
@@ -396,7 +422,8 @@ curl -X POST "http://localhost:8000/api/v1/search" \
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/index" \
-  -F "image=@/path/to/car_photo.jpg"
+  -F "image=@/path/to/car_photo.jpg" \
+  -F "plate_number=A888AA977"
 ```
 
 ### Batch index from folder (curl)
@@ -431,7 +458,7 @@ with open("car_photo.jpg", "rb") as f:
     response = requests.post(
         f"{BASE_URL}/index",
         files={"image": f},
-        data={"car_id": "car_001"}
+        data={"plate_number": "A888AA977"}
     )
     print(response.json())
 
@@ -458,11 +485,11 @@ The Elasticsearch index must have the following mapping:
         "type": "keyword"
       },
       "plate_number": {
-        "type": "text"
+        "type": "keyword"
       },
       "embedding": {
         "type": "dense_vector",
-        "dims": 512,
+        "dims": 2048,
         "index": true,
         "similarity": "cosine"
       },
@@ -481,7 +508,7 @@ The Elasticsearch index must have the following mapping:
 ```
 
 Run `scripts/setup_elasticsearch.sh` manually if you're not using Docker Compose, or run the `es-setup` job via
-`docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 512.
+`docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 2048.
 
 ## CI/CD
 
