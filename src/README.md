@@ -260,6 +260,19 @@ Upload a car photo with a partially visible license plate to find the top 5 most
 **Request:** Multipart form with file upload
 
 - `image`: Car photo (JPEG/PNG)
+- `plate_query` optional: visible plate characters. Use `*` or `?` for each
+  hidden character.
+
+Examples:
+
+```text
+A8**AA977  -> A8, then two hidden characters, then AA977
+A8         -> any indexed plate containing A8
+AA977      -> any indexed plate containing AA977
+```
+
+For Russian plates, type either Cyrillic or Latin lookalike letters. The app
+normalizes `АВЕКМНОРСТУХ` to `ABEKMHOPCTYX` before searching.
 
 **Response:**
 
@@ -274,6 +287,7 @@ Upload a car photo with a partially visible license plate to find the top 5 most
     }
   ],
   "detected_plate": "ABC12",
+  "plate_query": "A8**AA977",
   "total_found": 3
 }
 ```
@@ -370,6 +384,14 @@ curl -X POST "http://localhost:8000/api/v1/search" \
   -F "image=@/path/to/car_photo.jpg"
 ```
 
+With a manually visible plate fragment:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/search" \
+  -F "image=@/path/to/car_photo.jpg" \
+  -F "plate_query=A8**AA977"
+```
+
 ### Index a single car (curl)
 
 ```bash
@@ -399,7 +421,8 @@ BASE_URL = "http://localhost:8000/api/v1"
 with open("car_photo.jpg", "rb") as f:
     response = requests.post(
         f"{BASE_URL}/search",
-        files={"image": f}
+        files={"image": f},
+        data={"plate_query": "A8**AA977"}
     )
     print(response.json())
 

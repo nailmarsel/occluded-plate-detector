@@ -4,8 +4,9 @@ DATASET_REPO ?= yandex/mad-cars
 MAX_IDENTITIES ?= 500
 MAX_IMAGES_PER_IDENTITY ?= 12
 EPOCHS ?= 30
-BATCH ?= 64
+BATCH ?= 16
 DEVICE ?= auto
+WORKERS ?= 0
 HF_TOKEN ?=
 
 export HF_TOKEN
@@ -34,6 +35,7 @@ train:
 		--epochs $(EPOCHS) \
 		--batch-size $(BATCH) \
 		--device $(DEVICE) \
+		--workers $(WORKERS) \
 		--publish
 
 evaluate:
@@ -41,4 +43,6 @@ evaluate:
 	$(require-prepared-data)
 	$(PYTHON) scripts/evaluate_car_embedder.py \
 		--data-dir "$(DATA_DIR)" \
+		--batch-size $(BATCH) \
+		--workers $(WORKERS) \
 		--device $(DEVICE)

@@ -1,7 +1,8 @@
 PYTHON ?= python3
 EPOCHS ?= 30
-BATCH ?= 128
+BATCH ?= 64
 DEVICE ?= cpu
+WORKERS ?= 0
 HF_TOKEN ?=
 
 export HF_TOKEN
@@ -19,10 +20,11 @@ train:
 		--epochs $(EPOCHS) \
 		--batch-size $(BATCH) \
 		--device $(DEVICE) \
+		--workers $(WORKERS) \
 		--publish
 
 evaluate:
-	$(PYTHON) scripts/evaluate_plate_ocr.py --device $(DEVICE)
+	$(PYTHON) scripts/evaluate_plate_ocr.py --batch-size $(BATCH) --device $(DEVICE) --workers $(WORKERS)
 
 predict:
 	test -n "$(SOURCE)"

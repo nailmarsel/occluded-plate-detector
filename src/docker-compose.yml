@@ -162,6 +162,7 @@ services:
       - DEBUG=False
       - ML_STRICT_STARTUP=False
       - ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False
+      - ML_ALLOW_FULL_IMAGE_CAR_FALLBACK=True
       - ML_DEBUG_IMAGE_DIR=/tmp/autobahncv-debug
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
@@ -174,6 +175,7 @@ services:
       - S3_REGION=us-east-1
       - S3_USE_SSL=False
       - NEURON1_CAR_DETECTION_MODEL=/app/models/car_detector.pt
+      - NEURON1_CONFIDENCE_THRESHOLD=0.25
       - NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
       - NEURON3_OCR_MODEL=/app/models/plate_ocr.pt
       - NEURON3_CONFIDENCE_THRESHOLD=0.45

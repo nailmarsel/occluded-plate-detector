@@ -13,6 +13,8 @@ venv/
 node_modules/
 dist/
 *.log
+.DS_Store
+**/.DS_Store
 
 # ML training artifacts
 ml/plate_detector/data/

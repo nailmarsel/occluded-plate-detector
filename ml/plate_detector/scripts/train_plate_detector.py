@@ -62,9 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-model", default="yolo11n.pt")
     parser.add_argument("--epochs", type=int, default=80)
     parser.add_argument("--imgsz", type=int, default=960)
-    parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--device", default="auto")
-    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--patience", type=int, default=20)
     parser.add_argument("--name", default="russian_plate_yolo")
     parser.add_argument(
@@ -242,12 +242,12 @@ def download_dataset(dataset_repo: str, raw_dir: Path, hf_token: str | None) -> 
 
 def train(args: argparse.Namespace, data_yaml: Path) -> Path:
     try:
-        from device import resolve_device
+        from device import resolve_training_device
     except ModuleNotFoundError:
-        from scripts.device import resolve_device
+        from scripts.device import resolve_training_device
     from ultralytics import YOLO
 
-    device = resolve_device(args.device)
+    device = resolve_training_device(args.device)
     if device != args.device:
         print(f"Resolved device '{args.device}' to '{device}'")
 

@@ -15,8 +15,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate car embedder classifier head.")
     parser.add_argument("--model", type=Path, default=root / "src" / "models" / "car_embedder.pt")
     parser.add_argument("--data-dir", required=True, type=Path)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--workers", type=int, default=0)
     return parser
 
 
@@ -27,7 +28,7 @@ def main() -> None:
         print(f"Resolved device '{args.device}' to '{device}'")
     checkpoint = torch.load(args.model, map_location=device)
     dataset = ImageFolder(args.data_dir, transform=build_transforms(train=False))
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
     model = ResNetEmbedder(num_classes=len(checkpoint["classes"]), backbone=checkpoint["backbone"]).to(device)
     model.load_state_dict(checkpoint["model"])
     model.eval()

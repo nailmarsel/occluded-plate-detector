@@ -83,7 +83,15 @@ Running `make train` without `DATA_DIR` uses the default prepared MAD Cars
 folder: `data/imagefolder/mad_cars`.
 
 `--device auto` resolves to CUDA when available, then Apple MPS, then CPU. You
-can force a device with `DEVICE=cpu`, `DEVICE=cuda`, or `DEVICE=mps`.
+can force a device with `DEVICE=cpu`, `DEVICE=cuda`, or `DEVICE=mps`. On a
+MacBook M3 Pro, the Makefile defaults to `BATCH=16 WORKERS=0` for stable local
+training.
+
+Short smoke train:
+
+```bash
+make train EPOCHS=1 BATCH=8
+```
 
 Published artifact:
 
@@ -91,9 +99,8 @@ Published artifact:
 src/models/car_embedder.pt
 ```
 
-The current app does not yet load this custom checkpoint; it keeps using
-TorchVision ResNet by name. This workspace prepares the training process so the
-app backend can be switched cleanly when you have enough identity data.
+The app loads this custom checkpoint from `src/models/car_embedder.pt` when
+`NEURON4_RESNET_MODEL=/app/models/car_embedder.pt` is set in Docker.
 
 ## Notebooks
 

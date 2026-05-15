@@ -8,6 +8,7 @@ from app.neurons.base import BaseNeuron
 
 
 VEHICLE_CLASS_IDS = {2, 3, 5, 7}  # COCO: car, motorcycle, bus, truck
+COCO_VEHICLE_NAMES = {"car", "motorcycle", "bus", "truck"}
 
 
 def _missing_dependency_message(package: str) -> str:
@@ -120,12 +121,32 @@ class CarDetectionNeuron(YoloDetectionNeuron):
     async def initialize(self) -> None:
         await super().initialize()
         model_path = Path(self.model_path)
-        if model_path.exists() and model_path.suffix == ".pt":
+        model_names = set(getattr(self.model, "names", {}).values())
+        if model_path.exists() and model_path.suffix == ".pt" and not (
+            COCO_VEHICLE_NAMES & model_names
+        ):
             self.allowed_class_ids = None
             logger.info(
                 "Using custom car detector without COCO class-id filtering: %s",
                 self.model_path,
             )
+
+    async def predict(self, image: Image.Image) -> dict:
+        try:
+            return await super().predict(image)
+        except ValueError:
+            if not settings.ML_ALLOW_FULL_IMAGE_CAR_FALLBACK:
+                raise
+            crop_box = [0, 0, image.width, image.height]
+            logger.warning(
+                "No car detected. Using full image as car crop because "
+                "ML_ALLOW_FULL_IMAGE_CAR_FALLBACK=True."
+            )
+            return {
+                self.result_image_key: image,
+                "bbox": crop_box,
+                "confidence": 0.0,
+            }
 
 
 class PlateDetectionNeuron(YoloDetectionNeuron):

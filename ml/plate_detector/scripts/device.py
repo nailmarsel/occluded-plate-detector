@@ -14,3 +14,15 @@ def resolve_device(device: str) -> str:
         return "mps"
 
     return "cpu"
+
+
+def resolve_training_device(device: str) -> str:
+    if device.lower() != "auto":
+        return device
+
+    import torch
+
+    if torch.cuda.is_available():
+        return "0"
+
+    return "cpu"

@@ -13,6 +13,7 @@ from app.neurons.embedding import EmbeddingNeuron
 from app.neurons.ocr import OCRNeuron
 
 PLATE_CHARS_PATTERN = re.compile(r"[^A-Z0-9]")
+PLATE_QUERY_CHARS_PATTERN = re.compile(r"[^A-Z0-9*?]")
 CYRILLIC_TO_LATIN_PLATE_CHARS = str.maketrans(
     {
         "А": "A",
@@ -34,6 +35,17 @@ CYRILLIC_TO_LATIN_PLATE_CHARS = str.maketrans(
 def normalize_plate_number(plate_number: str) -> str:
     normalized = plate_number.upper().translate(CYRILLIC_TO_LATIN_PLATE_CHARS)
     return PLATE_CHARS_PATTERN.sub("", normalized)
+
+
+def normalize_plate_query(plate_query: str) -> str:
+    normalized = plate_query.upper().translate(CYRILLIC_TO_LATIN_PLATE_CHARS)
+    return PLATE_QUERY_CHARS_PATTERN.sub("", normalized)
+
+
+def plate_query_to_elasticsearch_wildcard(plate_query: str) -> str:
+    normalized = normalize_plate_query(plate_query)
+    wildcard = normalized.replace("*", "?")
+    return f"*{wildcard}*" if wildcard else ""
 
 
 def _save_debug_image(image: Image.Image | None, name: str) -> None:

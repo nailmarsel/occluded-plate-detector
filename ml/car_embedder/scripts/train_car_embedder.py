@@ -22,9 +22,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--backbone", default="resnet50", choices=["resnet50", "resnet101"])
     parser.add_argument("--runs-dir", type=Path, default=work_dir / "runs")
     parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--artifact-path", type=Path, default=root / "src" / "models" / "car_embedder.pt")
     parser.add_argument("--publish", action="store_true")
     return parser
@@ -53,8 +54,8 @@ def main() -> None:
     train_set, val_set = random_split(full_dataset, [train_size, val_size])
     val_set.dataset.transform = build_transforms(train=False)
 
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
 
     model = ResNetEmbedder(num_classes=len(full_dataset.classes), backbone=args.backbone).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)

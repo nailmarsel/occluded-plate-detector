@@ -3,8 +3,9 @@ DATASET_REPO ?= AY000554/Car_plate_detecting_dataset
 BASE_MODEL ?= yolo11n.pt
 EPOCHS ?= 80
 IMGSZ ?= 960
-BATCH ?= 16
+BATCH ?= 4
 DEVICE ?= auto
+WORKERS ?= 0
 HF_TOKEN ?=
 RUN_NAME ?= russian_plate_yolo
 BEST ?= runs/$(RUN_NAME)/weights/best.pt
@@ -32,6 +33,7 @@ train:
 		--imgsz $(IMGSZ) \
 		--batch $(BATCH) \
 		--device $(DEVICE) \
+		--workers $(WORKERS) \
 		--name $(RUN_NAME) \
 		--publish
 

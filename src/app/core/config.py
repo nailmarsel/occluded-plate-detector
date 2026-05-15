@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     ML_STRICT_STARTUP: bool = False
     ML_ALLOW_HEURISTIC_PLATE_FALLBACK: bool = False
+    ML_ALLOW_FULL_IMAGE_CAR_FALLBACK: bool = True
     ML_DEBUG_IMAGE_DIR: str = ""
 
     # Elasticsearch

@@ -144,7 +144,7 @@ class ElasticsearchClient:
                 knn["filter"] = {
                     "wildcard": {
                         "plate_number": {
-                            "value": f"*{plate_number}*",
+                            "value": plate_number,
                             "case_insensitive": True,
                         }
                     }

@@ -28,9 +28,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest-dir", type=Path, default=work_dir / "data" / "manifests")
     parser.add_argument("--runs-dir", type=Path, default=work_dir / "runs")
     parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--artifact-path", type=Path, default=root / "src" / "models" / "plate_ocr.pt")
     parser.add_argument("--publish", action="store_true")
     return parser
@@ -59,8 +60,20 @@ def main() -> None:
         print(f"Resolved device '{args.device}' to '{device}'")
     train_set = PlateOCRDataset(args.manifest_dir / "train.csv")
     val_set = PlateOCRDataset(args.manifest_dir / "val.csv")
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=4, collate_fn=collate_batch)
-    val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=collate_batch)
+    train_loader = DataLoader(
+        train_set,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.workers,
+        collate_fn=collate_batch,
+    )
+    val_loader = DataLoader(
+        val_set,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        collate_fn=collate_batch,
+    )
 
     model = PlateOCRModel().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)

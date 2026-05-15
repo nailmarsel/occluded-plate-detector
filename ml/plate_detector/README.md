@@ -50,7 +50,7 @@ python scripts/train_plate_detector.py \
   --base-model yolo11n.pt \
   --epochs 80 \
   --imgsz 960 \
-  --batch 16 \
+  --batch 4 \
   --device auto \
   --publish
 ```
@@ -61,11 +61,19 @@ Equivalent Make target:
 make train
 ```
 
-`DEVICE=auto` resolves to CUDA when available, then Apple MPS, then CPU. You can
-force a device for training or evaluation:
+For training, `DEVICE=auto` resolves to CUDA when available, otherwise CPU.
+Ultralytics YOLO training can hit target-assignment errors on Apple MPS, so MPS
+is skipped for training. Evaluation and prediction can still use MPS through
+their normal `DEVICE=auto` path. You can force a device:
 
 ```bash
 make train DEVICE=cpu
+```
+
+On a MacBook M3 Pro, run a short smoke train before the full run:
+
+```bash
+make train EPOCHS=1 BATCH=2 IMGSZ=640
 ```
 
 You can also pass the token only for one Make invocation:

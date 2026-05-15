@@ -47,14 +47,21 @@ evaluation:
 make train DEVICE=cpu
 ```
 
+On a MacBook M3 Pro, the Makefile defaults to `BATCH=64 WORKERS=0`. Run a short
+smoke train before a full run:
+
+```bash
+make train EPOCHS=1 BATCH=32
+```
+
 Published artifact:
 
 ```text
 src/models/plate_ocr.pt
 ```
 
-The current app still uses EasyOCR. This model workspace is prepared so we can
-swap the app OCR backend later without changing the training process.
+The app loads this custom checkpoint from `src/models/plate_ocr.pt` when
+`NEURON3_OCR_MODEL=/app/models/plate_ocr.pt` is set in Docker.
 
 ## Notebooks
 

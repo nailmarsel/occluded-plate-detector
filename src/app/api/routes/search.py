@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from app.api.dependencies import get_processing_pipeline
 from app.core.config import settings
@@ -8,9 +8,6 @@ from app.models.schemas import ErrorResponse, SearchResponse, SearchResults
 from app.services.elasticsearch_client import es_client
 from app.monitoring.metrics import (
     images_processed_total,
-    input_errors_total,
-    neuron_failures_total,
-    plate_fallback_total,
     confidence_car,
     confidence_plate,
     confidence_ocr,
@@ -18,6 +15,7 @@ from app.monitoring.metrics import (
     image_size_bytes,
     search_similarity_score
 )
+from app.services.pipeline import plate_query_to_elasticsearch_wildcard, normalize_plate_query
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -46,6 +44,13 @@ async def search_similar_cars(
     image: UploadFile = File(
         ...,
         description="Car photo with partially visible license plate (JPEG, PNG)"
+    ),
+    plate_query: str = Form(
+        "",
+        description=(
+            "Optional visible plate fragment. Use * or ? for each hidden "
+            "character, e.g. A8**AA977."
+        ),
     ),
 ) -> SearchResults:
     """
@@ -83,27 +88,39 @@ async def search_similar_cars(
         pipeline = get_processing_pipeline(request)
         result = await pipeline.process_for_search(image_data)
 
-        plate_number = result["plate_number"]
+        plate_number = result.get("plate_number", "")
         embedding = result["embedding"]
+        normalized_plate_query = normalize_plate_query(plate_query)
+        plate_filter = (
+            plate_query_to_elasticsearch_wildcard(normalized_plate_query)
+            if normalized_plate_query
+            else plate_query_to_elasticsearch_wildcard(plate_number)
+        )
 
-        if hasattr(result, "car_confidence"):
+        if "car_confidence" in result:
             confidence_car.observe(result["car_confidence"])
-        if hasattr(result, "plate_confidence"):
+        if "plate_confidence" in result:
             confidence_plate.observe(result["plate_confidence"])
-        if hasattr(result, "ocr_confidence"):
+        if "ocr_confidence" in result:
             confidence_ocr.observe(result["ocr_confidence"])
 
-        plate_number = result.get("plate_number", "")
         plate_length.observe(len(plate_number))
 
-        if plate_number:
-            logger.info(f"Searching for cars with plate: '{plate_number}'")
+        if normalized_plate_query:
+            logger.info(
+                "Searching for cars with manual plate query '%s' "
+                "(OCR detected '%s')",
+                normalized_plate_query,
+                plate_number or "<none>",
+            )
+        elif plate_number:
+            logger.info(f"Searching for cars with OCR plate: '{plate_number}'")
         else:
             logger.info("Searching for cars by embedding only")
 
         # Search in Elasticsearch
         search_result = await es_client.search_by_plate_and_embedding(
-            plate_number=plate_number,
+            plate_number=plate_filter,
             query_embedding=embedding,
             top_k=settings.SEARCH_TOP_K
         )
@@ -131,6 +148,7 @@ async def search_similar_cars(
         return SearchResults(
             results=formatted_results,
             detected_plate=plate_number,
+            plate_query=normalized_plate_query or None,
             total_found=total_found
         )
 

@@ -25,6 +25,30 @@ NEURON4_RESNET_MODEL=/app/models/car_embedder.pt
 If a training run was completed without `--publish`, copy its `best.pt` from
 the workspace `runs/` directory to the artifact name shown in the table.
 
+## MacBook M3 Pro Defaults
+
+The Makefiles are tuned for stable local training on Apple Silicon:
+
+| Workspace | `DEVICE=auto` for training | Default batch | Why |
+|-----------|----------------------------|---------------|-----|
+| `car_detector` | CUDA if available, otherwise CPU | 4 | Ultralytics YOLO training is unstable on MPS. |
+| `plate_detector` | CUDA if available, otherwise CPU | 4 | Same YOLO/MPS limitation as car detection. |
+| `plate_ocr` | CUDA if available, otherwise CPU | 64 | PyTorch CTC loss is not implemented on MPS. |
+| `car_embedder` | CUDA, then MPS, then CPU | 16 | ResNet training works on MPS, but smaller batches are safer. |
+
+All workspaces default to `WORKERS=0`, which avoids macOS multiprocessing
+issues in local virtualenvs. Increase `BATCH` or `WORKERS` only after a short
+smoke run succeeds.
+
+Useful smoke commands:
+
+```bash
+cd ml/plate_detector && make train EPOCHS=1 BATCH=2 IMGSZ=640
+cd ml/car_detector && make train EPOCHS=1 BATCH=2 IMGSZ=640
+cd ml/plate_ocr && make train EPOCHS=1 BATCH=32
+cd ml/car_embedder && make train EPOCHS=1 BATCH=8
+```
+
 Monitoring, drift checks, feedback collection, registry fields, and retraining
 rules for all four models are described in
 [`../specs/Monitoring_Retraining.md`](../specs/Monitoring_Retraining.md).

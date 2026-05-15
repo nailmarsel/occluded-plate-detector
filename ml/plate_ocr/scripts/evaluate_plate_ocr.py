@@ -15,8 +15,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate plate OCR model.")
     parser.add_argument("--model", type=Path, default=root / "src" / "models" / "plate_ocr.pt")
     parser.add_argument("--manifest", type=Path, default=work_dir / "data" / "manifests" / "test.csv")
-    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--workers", type=int, default=0)
     return parser
 
 
@@ -26,7 +27,13 @@ def main() -> None:
     if str(device) != args.device:
         print(f"Resolved device '{args.device}' to '{device}'")
     dataset = PlateOCRDataset(args.manifest)
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=collate_batch)
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        collate_fn=collate_batch,
+    )
     model = PlateOCRModel().to(device)
     checkpoint = torch.load(args.model, map_location=device)
     model.load_state_dict(checkpoint["model"])

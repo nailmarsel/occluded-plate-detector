@@ -1,8 +1,9 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-export async function searchSimilarCars(imageFile) {
+export async function searchSimilarCars(imageFile, plateQuery = '') {
     const formData = new FormData();
     formData.append('image', imageFile);
+    if (plateQuery.trim()) formData.append('plate_query', plateQuery.trim());
 
     const response = await fetch(`${API_BASE}/api/v1/search`, {
         method: 'POST',
