@@ -155,7 +155,7 @@ future releases.
     app.openapi = lambda: custom_openapi_schema(app)
 
     Instrumentator().instrument(app).expose(app, endpoint="/metrics")
-    
+
     # CORS middleware
     app.add_middleware(
         CORSMiddleware,

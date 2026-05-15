@@ -1,5 +1,7 @@
 import datetime
+
 from app.services.elasticsearch_client import es_client
+
 
 async def log_inference_event(event: dict):
     """
@@ -13,6 +15,7 @@ async def log_inference_event(event: dict):
         index="inference-logs",
         body=event
     )
+
 
 async def log_feedback_event(event: dict):
     await es_client.index_document(index="feedback-logs", body=event)

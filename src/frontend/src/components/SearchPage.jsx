@@ -8,6 +8,7 @@ export default function SearchPage() {
     const [error, setError] = useState(null)
     const [results, setResults] = useState(null)
     const [dragOver, setDragOver] = useState(false)
+    const [plateQuery, setPlateQuery] = useState('')
 
     const handleFileSelect = useCallback((file) => {
         if (file && (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg')) {
@@ -42,7 +43,7 @@ export default function SearchPage() {
         setLoading(true)
         setError(null)
         try {
-            const data = await searchSimilarCars(imageFile)
+            const data = await searchSimilarCars(imageFile, plateQuery)
             setResults(data)
         } catch (err) {
             setError(err.message)
@@ -56,6 +57,7 @@ export default function SearchPage() {
         setImagePreview(null)
         setResults(null)
         setError(null)
+        setPlateQuery('')
     }
 
     return (
@@ -93,6 +95,21 @@ export default function SearchPage() {
                     </div>
                 )}
 
+                <div className="form-group">
+                    <label className="form-label" htmlFor="search-plate-query">
+                        Visible plate fragment
+                    </label>
+                    <input
+                        id="search-plate-query"
+                        className="form-input"
+                        type="text"
+                        placeholder="A8**AA977"
+                        value={plateQuery}
+                        onChange={(e) => setPlateQuery(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
+
                 <div style={{display: 'flex', gap: '0.75rem', marginTop: '1rem'}}>
                     <button
                         className="btn btn-primary btn-block"
@@ -123,7 +140,11 @@ export default function SearchPage() {
                             Search Results
                         </h2>
                         <span className="results-count">
-              Detected plate: <strong>{results.detected_plate || 'N/A'}</strong> &middot; {results.total_found} car(s) found
+              Detected plate: <strong>{results.detected_plate || 'N/A'}</strong>
+                            {results.plate_query ? (
+                                <> &middot; Query: <strong>{results.plate_query}</strong></>
+                            ) : null}
+                            {' '}&middot; {results.total_found} car(s) found
             </span>
                     </div>
 

@@ -59,6 +59,10 @@ The CI/CD workflows for this app live at the repository root in
 `.github/workflows/`, because GitHub Actions only runs workflows from that
 location.
 
+The service monitoring, model monitoring, drift signals, feedback loop, model
+registry, and retraining policy are documented in
+[`../specs/Monitoring_Retraining.md`](../specs/Monitoring_Retraining.md).
+
 ## Setup & Installation
 
 ### Prerequisites
@@ -112,12 +116,20 @@ docker compose ps
 | MinIO API | `http://localhost:9000` | S3-compatible image storage |
 | MinIO Console | `http://localhost:9001` | Web UI for browsing buckets |
 | Kibana | `http://localhost:5601` | ES visualization (optional) |
+| Prometheus | `http://localhost:9090` | Metrics scraping and PromQL |
+| Grafana | `http://localhost:3001` | Monitoring dashboards |
+| MLflow | `http://localhost:5000` | Experiment and model registry UI |
 
 To start with Kibana:
 
 ```bash
 docker compose --profile monitoring up -d
 ```
+
+By default, Compose starts Elasticsearch, MinIO, setup jobs, Prometheus,
+Grafana, and MLflow. The `monitoring` profile additionally starts Kibana. It
+does not start the FastAPI app or frontend. Use the `full` profile when you want
+the application to load models and serve API/UI traffic.
 
 ### 6. Run the full stack (including the app)
 
@@ -129,13 +141,74 @@ This builds and runs the FastAPI app alongside ES and MinIO.
 
 ### 7. Prepare Neural Network Models
 
-Update the neuron implementations in `app/neurons/` with your actual models:
+Training workspaces live in `../ml`. Their `make train` targets publish model
+artifacts into `src/models`, which Docker mounts into the app container as
+`/app/models`:
 
-- **Neuron 1 & 2**: YOLO v8 models for car and plate detection
-- **Neuron 3**: OCR model for plate text recognition
-- **Neuron 4**: ResNet-108 for embedding generation
+| Neuron | Training workspace | App artifact |
+|--------|--------------------|--------------|
+| Car detector | `../ml/car_detector` | `src/models/car_detector.pt` |
+| Plate detector | `../ml/plate_detector` | `src/models/license_plate_detector.pt` |
+| Plate OCR | `../ml/plate_ocr` | `src/models/plate_ocr.pt` |
+| Car embedder | `../ml/car_embedder` | `src/models/car_embedder.pt` |
 
-Update model paths in `.env` accordingly. Each neuron class has `TODO` comments showing where to add your code.
+Configure Docker paths like this:
+
+```env
+NEURON1_CAR_DETECTION_MODEL=/app/models/car_detector.pt
+NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+NEURON3_OCR_MODEL=/app/models/plate_ocr.pt
+NEURON4_RESNET_MODEL=/app/models/car_embedder.pt
+NEURON4_EMBEDDING_DIM=2048
+```
+
+If a training run was completed without `--publish`, copy the workspace
+`runs/.../best.pt` checkpoint to the corresponding `src/models/*.pt` artifact
+name above.
+
+For Russian license plates, do not rely on the heuristic plate crop fallback in
+production. License plates are not part of the COCO classes used by the default
+YOLO vehicle model, so `NEURON2_PLATE_DETECTION_MODEL` must point to custom
+license-plate detector weights trained or fine-tuned on Russian plate images.
+Set `ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False` when you want startup or inference
+to fail loudly if those weights are missing.
+
+Recommended detector path:
+
+```env
+NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False
+```
+
+For best Russian results, train or fine-tune an Ultralytics YOLO detector on the
+`AY000554/Car_plate_detecting_dataset` Hugging Face dataset. It contains about
+25.5K Russian car images with YOLO-format plate boxes and matches this app's
+single-class plate detector interface. Generic international plate detectors can
+work as a quick smoke test, but they are less reliable on Russian plate layouts,
+camera angles, and local image conditions.
+
+Training code lives in `../ml/plate_detector`. Run `make train` there to produce
+`models/license_plate_detector.pt` for this Docker app.
+
+To inspect detection quality during search, set:
+
+```env
+ML_DEBUG_IMAGE_DIR=/tmp/autobahncv-debug
+```
+
+The pipeline will save car and plate crops there. If plate crops do not tightly
+contain the number, fix or retrain the detector before tuning OCR.
+
+The OCR post-processing expects Russian private passenger plate structure after
+normalization, for example `E507MO136`:
+
+```text
+letter + 3 digits + 2 letters + 2-3 digit region
+```
+
+If EasyOCR splits the crop into fragments such as `E507MO` and `136`, the
+pipeline joins left-to-right fragments and prefers a valid full Russian plate
+over a short high-confidence region fragment.
 
 ## Running the Application
 
@@ -179,6 +252,7 @@ Once running, the API docs are available at:
 | `/openapi.json`        | Raw OpenAPI 3.1 JSON spec             |
 | `/api/v1/openapi/json` | Download OpenAPI JSON spec            |
 | `/api/v1/openapi/yaml` | Download OpenAPI YAML spec            |
+| `/metrics`             | Prometheus metrics endpoint           |
 
 ## API Endpoints
 
@@ -191,6 +265,19 @@ Upload a car photo with a partially visible license plate to find the top 5 most
 **Request:** Multipart form with file upload
 
 - `image`: Car photo (JPEG/PNG)
+- `plate_query` optional: visible plate characters. Use `*` or `?` for each
+  hidden character.
+
+Examples:
+
+```text
+A8**AA977  -> A8, then two hidden characters, then AA977
+A8         -> any indexed plate containing A8
+AA977      -> any indexed plate containing AA977
+```
+
+For Russian plates, type either Cyrillic or Latin lookalike letters. The app
+normalizes `АВЕКМНОРСТУХ` to `ABEKMHOPCTYX` before searching.
 
 **Response:**
 
@@ -205,6 +292,7 @@ Upload a car photo with a partially visible license plate to find the top 5 most
     }
   ],
   "detected_plate": "ABC12",
+  "plate_query": "A8**AA977",
   "total_found": 3
 }
 ```
@@ -218,6 +306,7 @@ Add a car to the system. The image is processed, uploaded to MinIO, and indexed 
 **Request:** Multipart form
 
 - `image`: Car photo (JPEG/PNG)
+- `plate_number`: Known plate number. Required for indexing.
 
 **Response:**
 
@@ -292,6 +381,26 @@ Check the health status of the application and its dependencies.
 }
 ```
 
+### 5. Submit Search Feedback
+
+**POST** `/api/v1/feedback`
+
+Record user feedback for monitoring and later retraining.
+
+**Request:** JSON body
+
+```json
+{
+  "result_id": "car_123",
+  "action": "correct",
+  "corrected_plate": "A888AA977",
+  "comment": "OCR missed two digits",
+  "disputed": false
+}
+```
+
+Allowed `action` values are `confirm`, `reject`, and `correct`.
+
 ## Usage Examples
 
 ### Search for similar cars (curl)
@@ -301,11 +410,20 @@ curl -X POST "http://localhost:8000/api/v1/search" \
   -F "image=@/path/to/car_photo.jpg"
 ```
 
+With a manually visible plate fragment:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/search" \
+  -F "image=@/path/to/car_photo.jpg" \
+  -F "plate_query=A8**AA977"
+```
+
 ### Index a single car (curl)
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/index" \
-  -F "image=@/path/to/car_photo.jpg"
+  -F "image=@/path/to/car_photo.jpg" \
+  -F "plate_number=A888AA977"
 ```
 
 ### Batch index from folder (curl)
@@ -330,7 +448,8 @@ BASE_URL = "http://localhost:8000/api/v1"
 with open("car_photo.jpg", "rb") as f:
     response = requests.post(
         f"{BASE_URL}/search",
-        files={"image": f}
+        files={"image": f},
+        data={"plate_query": "A8**AA977"}
     )
     print(response.json())
 
@@ -339,7 +458,7 @@ with open("car_photo.jpg", "rb") as f:
     response = requests.post(
         f"{BASE_URL}/index",
         files={"image": f},
-        data={"car_id": "car_001"}
+        data={"plate_number": "A888AA977"}
     )
     print(response.json())
 
@@ -366,11 +485,11 @@ The Elasticsearch index must have the following mapping:
         "type": "keyword"
       },
       "plate_number": {
-        "type": "text"
+        "type": "keyword"
       },
       "embedding": {
         "type": "dense_vector",
-        "dims": 512,
+        "dims": 2048,
         "index": true,
         "similarity": "cosine"
       },
@@ -389,7 +508,7 @@ The Elasticsearch index must have the following mapping:
 ```
 
 Run `scripts/setup_elasticsearch.sh` manually if you're not using Docker Compose, or run the `es-setup` job via
-`docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 512.
+`docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 2048.
 
 ## CI/CD
 

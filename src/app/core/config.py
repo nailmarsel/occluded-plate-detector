@@ -9,7 +9,9 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     API_PREFIX: str = "/api/v1"
     ML_STRICT_STARTUP: bool = False
-    ML_ALLOW_HEURISTIC_PLATE_FALLBACK: bool = True
+    ML_ALLOW_HEURISTIC_PLATE_FALLBACK: bool = False
+    ML_ALLOW_FULL_IMAGE_CAR_FALLBACK: bool = True
+    ML_DEBUG_IMAGE_DIR: str = ""
 
     # Elasticsearch
     ELASTICSEARCH_HOST: str = "localhost"
@@ -36,8 +38,8 @@ class Settings(BaseSettings):
     NEURON2_CONFIDENCE_THRESHOLD: float = 0.5
 
     # Neuron 3: OCR - License plate text recognition
-    NEURON3_OCR_MODEL: str = "en"
-    NEURON3_CONFIDENCE_THRESHOLD: float = 0.6
+    NEURON3_OCR_MODEL: str = "en,ru"
+    NEURON3_CONFIDENCE_THRESHOLD: float = 0.45
 
     # Neuron 4: ResNet - Embedding generation
     NEURON4_RESNET_MODEL: str = "resnet50"

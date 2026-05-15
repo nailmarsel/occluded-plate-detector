@@ -34,6 +34,7 @@ class SearchResponse(BaseModel):
 class SearchResults(BaseModel):
     results: list[SearchResponse]
     detected_plate: str
+    plate_query: str | None = None
     total_found: int
 
 

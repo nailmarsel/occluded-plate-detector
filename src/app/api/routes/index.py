@@ -11,20 +11,19 @@ from app.core.config import settings
 from app.core.enums import ErrorCode
 from app.core.logging import logger
 from app.models.schemas import ErrorResponse, IndexResponse
-from app.services.elasticsearch_client import es_client
-from app.services.pipeline import ImageProcessingPipeline, normalize_plate_number
-from app.services.s3_client import s3_client
 from app.monitoring.metrics import (
+    confidence_car,
+    confidence_ocr,
+    confidence_plate,
+    image_size_bytes,
     images_processed_total,
     input_errors_total,
     neuron_failures_total,
-    plate_fallback_total,
-    confidence_car,
-    confidence_plate,
-    confidence_ocr,
     plate_length,
-    image_size_bytes,
 )
+from app.services.elasticsearch_client import es_client
+from app.services.pipeline import ImageProcessingPipeline, normalize_plate_number
+from app.services.s3_client import s3_client
 
 router = APIRouter(prefix="/index", tags=["index"])
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
@@ -86,7 +85,6 @@ async def _process_and_index_single_image(
         confidence_plate.observe(result["plate_confidence"])
     if "ocr_confidence" in result:
         confidence_ocr.observe(result["ocr_confidence"])
-
 
     plate_number = result.get("plate_number", "")
     plate_length.observe(len(plate_number))
@@ -209,7 +207,7 @@ async def index_car(
             image_data, car_id, pipeline, plate_number=plate_number
         )
 
-    except HTTPException:
+    except HTTPException as e:
         if "Invalid image format" in str(e.detail) or "Empty image" in str(e.detail):
             input_errors_total.labels(reason="invalid_format_or_empty").inc()
         raise

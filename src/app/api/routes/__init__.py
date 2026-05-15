@@ -1,8 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import health, images, index, search
-from app.api.routes import feedback
-
+from app.api.routes import feedback, health, images, index, search
 
 api_router = APIRouter()
 
