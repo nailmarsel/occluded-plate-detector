@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Histogram, Gauge
+from prometheus_client import Counter, Gauge, Histogram
 
 # --- Service-level counters (step 1) already covered by instrumentator ---
 # These are specifically for input data quality monitoring

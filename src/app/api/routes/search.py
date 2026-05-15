@@ -5,17 +5,20 @@ from app.core.config import settings
 from app.core.enums import ErrorCode
 from app.core.logging import logger
 from app.models.schemas import ErrorResponse, SearchResponse, SearchResults
-from app.services.elasticsearch_client import es_client
 from app.monitoring.metrics import (
-    images_processed_total,
     confidence_car,
-    confidence_plate,
     confidence_ocr,
-    plate_length,
+    confidence_plate,
     image_size_bytes,
-    search_similarity_score
+    images_processed_total,
+    plate_length,
+    search_similarity_score,
 )
-from app.services.pipeline import plate_query_to_elasticsearch_wildcard, normalize_plate_query
+from app.services.elasticsearch_client import es_client
+from app.services.pipeline import (
+    normalize_plate_query,
+    plate_query_to_elasticsearch_wildcard,
+)
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -144,7 +147,7 @@ async def search_similar_cars(
 
         if formatted_results:
             search_similarity_score.observe(formatted_results[0].similarity_score)
-    
+
         return SearchResults(
             results=formatted_results,
             detected_plate=plate_number,
