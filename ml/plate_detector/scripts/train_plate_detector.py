@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
+import zipfile
 from pathlib import Path
 
 
@@ -129,7 +130,48 @@ def link_or_copy(source: Path, destination: Path, copy_files: bool) -> None:
         shutil.copy2(source, destination)
 
 
+def safe_extract_zip(archive_path: Path, destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    destination_root = destination.resolve()
+    with zipfile.ZipFile(archive_path) as archive:
+        for member in archive.infolist():
+            target = (destination / member.filename).resolve()
+            if destination_root != target and destination_root not in target.parents:
+                raise RuntimeError(f"Unsafe path in {archive_path}: {member.filename}")
+        archive.extractall(destination)
+
+
+def ensure_extracted_splits(raw_root: Path) -> Path:
+    extracted_root = raw_root / "extracted"
+    extracted_any = False
+
+    for split in SPLIT_ALIASES:
+        if find_split_dir(raw_root, split, "images") and find_split_dir(
+            raw_root, split, "labels"
+        ):
+            continue
+
+        archive_path = raw_root / f"{split}.zip"
+        if not archive_path.exists():
+            continue
+
+        split_root = extracted_root / split
+        if not (
+            find_split_dir(split_root, split, "images")
+            and find_split_dir(split_root, split, "labels")
+        ):
+            print(f"Extracting {archive_path.name}")
+            safe_extract_zip(archive_path, extracted_root)
+            extracted_any = True
+
+    if extracted_any:
+        print(f"Extracted dataset archives: {extracted_root}")
+
+    return extracted_root if extracted_root.exists() else raw_root
+
+
 def normalize_dataset(raw_root: Path, yolo_dir: Path, copy_files: bool) -> Path:
+    raw_root = ensure_extracted_splits(raw_root)
     yolo_dir.mkdir(parents=True, exist_ok=True)
 
     for split in ("train", "val", "test"):
@@ -199,7 +241,15 @@ def download_dataset(dataset_repo: str, raw_dir: Path, hf_token: str | None) -> 
 
 
 def train(args: argparse.Namespace, data_yaml: Path) -> Path:
+    try:
+        from device import resolve_device
+    except ModuleNotFoundError:
+        from scripts.device import resolve_device
     from ultralytics import YOLO
+
+    device = resolve_device(args.device)
+    if device != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
 
     model = YOLO(args.base_model)
     results = model.train(
@@ -207,7 +257,7 @@ def train(args: argparse.Namespace, data_yaml: Path) -> Path:
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch,
-        device=args.device,
+        device=device,
         workers=args.workers,
         patience=args.patience,
         project=str(args.runs_dir),

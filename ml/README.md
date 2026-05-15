@@ -12,14 +12,18 @@ This directory separates model development from the FastAPI application.
 The Docker app mounts `src/models` into `/app/models`, so published artifacts are
 available to the app container.
 
-The app currently uses:
+The app loads these files from `src/models` when the matching environment
+variables point to `/app/models/*.pt` inside Docker:
 
-- custom YOLO path for car/plate detectors,
-- EasyOCR for OCR,
-- TorchVision ResNet for embeddings.
+```env
+NEURON1_CAR_DETECTION_MODEL=/app/models/car_detector.pt
+NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+NEURON3_OCR_MODEL=/app/models/plate_ocr.pt
+NEURON4_RESNET_MODEL=/app/models/car_embedder.pt
+```
 
-The OCR and embedder workspaces prepare trainable replacements; app integration
-can be switched once their validation metrics are good enough.
+If a training run was completed without `--publish`, copy its `best.pt` from
+the workspace `runs/` directory to the artifact name shown in the table.
 
 Monitoring, drift checks, feedback collection, registry fields, and retraining
 rules for all four models are described in

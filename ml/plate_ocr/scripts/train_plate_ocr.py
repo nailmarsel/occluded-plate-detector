@@ -55,6 +55,8 @@ def main() -> None:
         prepare_dataset()
 
     device = resolve_device(args.device)
+    if str(device) != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
     train_set = PlateOCRDataset(args.manifest_dir / "train.csv")
     val_set = PlateOCRDataset(args.manifest_dir / "val.csv")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=4, collate_fn=collate_batch)

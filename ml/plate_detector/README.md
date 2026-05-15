@@ -61,6 +61,13 @@ Equivalent Make target:
 make train
 ```
 
+`DEVICE=auto` resolves to CUDA when available, then Apple MPS, then CPU. You can
+force a device for training or evaluation:
+
+```bash
+make train DEVICE=cpu
+```
+
 You can also pass the token only for one Make invocation:
 
 ```bash

@@ -38,6 +38,15 @@ You can also pass the token only for one Make invocation:
 make prepare HF_TOKEN=hf_your_token_here
 ```
 
+OCR training uses CTC loss, which PyTorch does not currently implement on Apple
+MPS. The Makefile therefore defaults to CPU. `DEVICE=auto` resolves to CUDA
+when available, otherwise CPU. You can force a device for training or
+evaluation:
+
+```bash
+make train DEVICE=cpu
+```
+
 Published artifact:
 
 ```text

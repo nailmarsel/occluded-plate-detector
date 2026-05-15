@@ -22,7 +22,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    try:
+        from device import resolve_device
+    except ModuleNotFoundError:
+        from scripts.device import resolve_device
     from ultralytics import YOLO
+
+    device = resolve_device(args.device)
+    if device != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     model = YOLO(str(args.model))
@@ -30,7 +38,7 @@ def main() -> None:
         source=args.source,
         imgsz=args.imgsz,
         conf=args.conf,
-        device=args.device,
+        device=device,
         project=str(args.output_dir),
         name="visual_check",
         exist_ok=True,

@@ -36,6 +36,8 @@ def iter_images(source: Path):
 def main() -> None:
     args = build_parser().parse_args()
     device = resolve_device(args.device)
+    if str(device) != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
     model = PlateOCRModel().to(device)
     checkpoint = torch.load(args.model, map_location=device)
     model.load_state_dict(checkpoint["model"])

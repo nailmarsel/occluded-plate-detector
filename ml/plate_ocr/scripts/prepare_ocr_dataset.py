@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import zipfile
 from pathlib import Path
 
 from ocr_common import PLATE_PATTERN, repo_root
@@ -57,6 +58,46 @@ def find_split_dir(root: Path, split: str) -> Path:
     raise RuntimeError(f"Could not find split '{split}' in {root}")
 
 
+def safe_extract_zip(archive_path: Path, destination: Path) -> None:
+    destination.mkdir(parents=True, exist_ok=True)
+    destination_root = destination.resolve()
+    with zipfile.ZipFile(archive_path) as archive:
+        for member in archive.infolist():
+            target = (destination / member.filename).resolve()
+            if destination_root != target and destination_root not in target.parents:
+                raise RuntimeError(f"Unsafe path in {archive_path}: {member.filename}")
+        archive.extractall(destination)
+
+
+def ensure_extracted_splits(raw_root: Path) -> Path:
+    extracted_root = raw_root / "extracted"
+    extracted_any = False
+
+    for split in SPLIT_ALIASES:
+        try:
+            find_split_dir(raw_root, split)
+            continue
+        except RuntimeError:
+            pass
+
+        archive_path = raw_root / f"{split}.zip"
+        if not archive_path.exists():
+            continue
+
+        try:
+            find_split_dir(extracted_root, split)
+            continue
+        except RuntimeError:
+            print(f"Extracting {archive_path.name}")
+            safe_extract_zip(archive_path, extracted_root)
+            extracted_any = True
+
+    if extracted_any:
+        print(f"Extracted dataset archives: {extracted_root}")
+
+    return extracted_root if extracted_root.exists() else raw_root
+
+
 def label_from_path(path: Path) -> str | None:
     label = path.stem.upper()
     if PLATE_PATTERN.fullmatch(label):
@@ -81,6 +122,7 @@ def write_manifest(split_dir: Path, manifest_path: Path) -> int:
 def main() -> None:
     args = build_parser().parse_args()
     raw_root = download_dataset(args.dataset_repo, args.raw_dir, args.hf_token)
+    raw_root = ensure_extracted_splits(raw_root)
     for split in ("train", "val", "test"):
         split_dir = find_split_dir(raw_root, split)
         count = write_manifest(split_dir, args.manifest_dir / f"{split}.csv")

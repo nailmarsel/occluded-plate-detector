@@ -34,7 +34,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    try:
+        from device import resolve_device
+    except ModuleNotFoundError:
+        from scripts.device import resolve_device
     from ultralytics import YOLO
+
+    device = resolve_device(args.device)
+    if device != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
 
     model = YOLO(args.base_model)
     results = model.train(
@@ -42,7 +50,7 @@ def main() -> None:
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch,
-        device=args.device,
+        device=device,
         workers=args.workers,
         patience=args.patience,
         project=str(args.runs_dir),

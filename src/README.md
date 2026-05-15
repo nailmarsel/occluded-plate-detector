@@ -123,6 +123,10 @@ To start with Kibana:
 docker compose --profile monitoring up -d
 ```
 
+The `monitoring` profile starts Elasticsearch, MinIO, setup jobs, and Kibana.
+It does not start the FastAPI app or frontend. Use the `full` profile when you
+want the application to load models and serve API/UI traffic.
+
 ### 6. Run the full stack (including the app)
 
 ```bash
@@ -133,13 +137,30 @@ This builds and runs the FastAPI app alongside ES and MinIO.
 
 ### 7. Prepare Neural Network Models
 
-Update the neuron implementations in `app/neurons/` with your actual models:
+Training workspaces live in `../ml`. Their `make train` targets publish model
+artifacts into `src/models`, which Docker mounts into the app container as
+`/app/models`:
 
-- **Neuron 1 & 2**: YOLO v8 models for car and plate detection
-- **Neuron 3**: OCR model for plate text recognition
-- **Neuron 4**: ResNet-108 for embedding generation
+| Neuron | Training workspace | App artifact |
+|--------|--------------------|--------------|
+| Car detector | `../ml/car_detector` | `src/models/car_detector.pt` |
+| Plate detector | `../ml/plate_detector` | `src/models/license_plate_detector.pt` |
+| Plate OCR | `../ml/plate_ocr` | `src/models/plate_ocr.pt` |
+| Car embedder | `../ml/car_embedder` | `src/models/car_embedder.pt` |
 
-Update model paths in `.env` accordingly. Each neuron class has `TODO` comments showing where to add your code.
+Configure Docker paths like this:
+
+```env
+NEURON1_CAR_DETECTION_MODEL=/app/models/car_detector.pt
+NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
+NEURON3_OCR_MODEL=/app/models/plate_ocr.pt
+NEURON4_RESNET_MODEL=/app/models/car_embedder.pt
+NEURON4_EMBEDDING_DIM=2048
+```
+
+If a training run was completed without `--publish`, copy the workspace
+`runs/.../best.pt` checkpoint to the corresponding `src/models/*.pt` artifact
+name above.
 
 For Russian license plates, do not rely on the heuristic plate crop fallback in
 production. License plates are not part of the COCO classes used by the default

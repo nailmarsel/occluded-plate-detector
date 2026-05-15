@@ -32,9 +32,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    if not args.data_dir.exists():
+        raise RuntimeError(
+            f"Data directory does not exist: {args.data_dir}. "
+            "Run `make prepare` or pass `--data-dir /path/to/imagefolder`."
+        )
+
     random.seed(42)
     torch.manual_seed(42)
     device = resolve_device(args.device)
+    if str(device) != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
 
     full_dataset = ImageFolder(args.data_dir, transform=build_transforms(train=True))
     if len(full_dataset.classes) < 2:

@@ -23,6 +23,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
     device = resolve_device(args.device)
+    if str(device) != args.device:
+        print(f"Resolved device '{args.device}' to '{device}'")
     checkpoint = torch.load(args.model, map_location=device)
     dataset = ImageFolder(args.data_dir, transform=build_transforms(train=False))
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)

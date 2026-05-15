@@ -1,7 +1,7 @@
 PYTHON ?= python3
 EPOCHS ?= 30
 BATCH ?= 128
-DEVICE ?= auto
+DEVICE ?= cpu
 HF_TOKEN ?=
 
 export HF_TOKEN

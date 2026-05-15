@@ -31,8 +31,18 @@ python scripts/train_car_detector.py \
   --base-model yolo11n.pt \
   --epochs 80 \
   --imgsz 960 \
+  --device auto \
   --publish
 ```
+
+Equivalent Make target:
+
+```bash
+make train DATA=/path/to/data.yaml
+```
+
+`--device auto` resolves to CUDA when available, then Apple MPS, then CPU. You
+can force a device with `DEVICE=cpu` or `DEVICE=0`.
 
 The published artifact is:
 

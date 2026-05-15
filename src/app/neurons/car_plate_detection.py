@@ -1,3 +1,5 @@
+from pathlib import Path
+
 # ruff: noqa: I001
 from PIL import Image
 from app.core.config import settings
@@ -114,6 +116,16 @@ class CarDetectionNeuron(YoloDetectionNeuron):
     allowed_class_ids = VEHICLE_CLASS_IDS
     result_image_key = "cropped_car_image"
     detector_name = "car"
+
+    async def initialize(self) -> None:
+        await super().initialize()
+        model_path = Path(self.model_path)
+        if model_path.exists() and model_path.suffix == ".pt":
+            self.allowed_class_ids = None
+            logger.info(
+                "Using custom car detector without COCO class-id filtering: %s",
+                self.model_path,
+            )
 
 
 class PlateDetectionNeuron(YoloDetectionNeuron):

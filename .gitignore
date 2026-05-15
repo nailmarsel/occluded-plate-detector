@@ -18,9 +18,11 @@ dist/
 ml/plate_detector/data/
 ml/plate_detector/runs/
 ml/plate_detector/predictions/
+ml/plate_detector/yolo*.pt
 ml/car_detector/data/
 ml/car_detector/runs/
 ml/car_detector/predictions/
+ml/car_detector/yolo*.pt
 ml/plate_ocr/data/
 ml/plate_ocr/runs/
 ml/plate_ocr/predictions/

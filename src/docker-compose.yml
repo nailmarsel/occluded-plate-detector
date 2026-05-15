@@ -173,9 +173,12 @@ services:
       - S3_BUCKET_NAME=autobahncv
       - S3_REGION=us-east-1
       - S3_USE_SSL=False
+      - NEURON1_CAR_DETECTION_MODEL=/app/models/car_detector.pt
       - NEURON2_PLATE_DETECTION_MODEL=/app/models/license_plate_detector.pt
-      - NEURON3_OCR_MODEL=en,ru
+      - NEURON3_OCR_MODEL=/app/models/plate_ocr.pt
       - NEURON3_CONFIDENCE_THRESHOLD=0.45
+      - NEURON4_RESNET_MODEL=/app/models/car_embedder.pt
+      - NEURON4_EMBEDDING_DIM=2048
     volumes:
       - ./models:/app/models:ro
     depends_on:
