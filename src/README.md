@@ -108,28 +108,20 @@ docker compose up -d
 docker compose ps
 ```
 
-**Services available after startup:**
-| Service | URL | Purpose |
-|---------|-----|---------|
-| Frontend | `http://localhost:3000` | React web UI |
-| Elasticsearch | `http://localhost:9200` | Vector search + metadata |
-| MinIO API | `http://localhost:9000` | S3-compatible image storage |
-| MinIO Console | `http://localhost:9001` | Web UI for browsing buckets |
-| Kibana | `http://localhost:5601` | ES visualization (optional) |
-| Prometheus | `http://localhost:9090` | Metrics scraping and PromQL |
-| Grafana | `http://localhost:3001` | Monitoring dashboards |
-| MLflow | `http://localhost:5000` | Experiment and model registry UI |
+This starts dependency services on the Docker network. They do not publish host
+ports in the default deployment; the public entry point is the gateway from the
+`full` profile.
 
-To start with Kibana:
+If you deploy behind a real domain, set `PUBLIC_BASE_URL` before starting the
+stack so Grafana and Kibana generate correct redirects:
 
 ```bash
-docker compose --profile monitoring up -d
+PUBLIC_BASE_URL=https://your-domain.example docker compose --profile full up -d
 ```
 
-By default, Compose starts Elasticsearch, MinIO, setup jobs, Prometheus,
-Grafana, and MLflow. The `monitoring` profile additionally starts Kibana. It
-does not start the FastAPI app or frontend. Use the `full` profile when you want
-the application to load models and serve API/UI traffic.
+The `monitoring` profile starts the dependency and monitoring services without
+the app gateway. Use the `full` profile when you want `/app`, `/grafana`, and
+`/kibana` to work from the single public port.
 
 ### 6. Run the full stack (including the app)
 
@@ -138,6 +130,20 @@ docker compose --profile full up -d
 ```
 
 This builds and runs the FastAPI app alongside ES and MinIO.
+
+Only the gateway publishes a host port. Elasticsearch, MinIO, Prometheus,
+Grafana, Kibana, MLflow, the FastAPI app, and the frontend stay on the Docker
+network.
+
+**Services available through the gateway:**
+| Service | URL | Purpose |
+|---------|-----|---------|
+| App UI | `http://localhost/app/` | React web UI |
+| API | `http://localhost/api/v1` | FastAPI API |
+| Swagger Docs | `http://localhost/docs` | Interactive API docs |
+| Grafana | `http://localhost/grafana/` | Monitoring dashboards |
+| Kibana | `http://localhost/kibana/` | ES visualization |
+| Metrics | `http://localhost/metrics` | Prometheus metrics endpoint |
 
 ### 7. Prepare Neural Network Models
 
@@ -236,10 +242,12 @@ docker compose --profile full up -d
 
 The application will be available at:
 
-- **Frontend (UI)**: `http://localhost:3000`
-- **API Base**: `http://localhost:8000/api/v1`
-- **Swagger Docs**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+- **Frontend (UI)**: `http://localhost/app/`
+- **API Base**: `http://localhost/api/v1`
+- **Swagger Docs**: `http://localhost/docs`
+- **ReDoc**: `http://localhost/redoc`
+- **Grafana**: `http://localhost/grafana/`
+- **Kibana**: `http://localhost/kibana/`
 
 ## API Documentation
 
