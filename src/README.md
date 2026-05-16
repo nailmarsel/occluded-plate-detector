@@ -147,7 +147,9 @@ network.
 
 Use `http://localhost/grafana/` for Grafana login. The development compose
 file also trusts `http://127.0.0.1`, but using one hostname consistently avoids
-browser cookie and origin mismatches.
+browser cookie and origin mismatches. If Grafana was restarted while your
+browser was open, clear cookies/site data for `localhost` and `127.0.0.1`, then
+log in again.
 
 Grafana is provisioned automatically from `src/grafana`. The full stack creates
 the Prometheus datasource and an `AutobahnCV` folder with these dashboards:

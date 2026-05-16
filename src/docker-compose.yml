@@ -152,12 +152,17 @@ services:
     environment:
       - GF_SERVER_ROOT_URL=${PUBLIC_BASE_URL:-http://localhost}/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      - GF_SECURITY_CSRF_TRUSTED_ORIGINS=http://localhost http://127.0.0.1
+      - GF_SERVER_DOMAIN=localhost
+      - GF_SERVER_ENFORCE_DOMAIN=false
+      - GF_SECURITY_SECRET_KEY=autobahncv-local-dev-grafana-secret
+      - GF_SECURITY_COOKIE_SAMESITE=lax
+      - GF_SECURITY_CSRF_TRUSTED_ORIGINS=localhost 127.0.0.1 http://localhost http://127.0.0.1
       - GF_LIVE_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/autobahncv/autobahncv-overview.json
     expose:
       - "3000"
     volumes:
+      - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards/autobahncv:ro
     depends_on:
@@ -260,6 +265,8 @@ volumes:
   minio_data:
     driver: local
   mlflow_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
