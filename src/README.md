@@ -145,6 +145,15 @@ network.
 | Kibana | `http://localhost/kibana/` | ES visualization |
 | Metrics | `http://localhost/metrics` | Prometheus metrics endpoint |
 
+Grafana is provisioned automatically from `src/grafana`. The full stack creates
+the Prometheus datasource and an `AutobahnCV` folder with these dashboards:
+
+- `AutobahnCV Overview`: API traffic, errors, latency, and processed images.
+- `AutobahnCV ML Pipeline`: detector/OCR confidence, plate quality, failures,
+  search similarity, and feedback actions.
+- `AutobahnCV Runtime`: app scrape health, CPU, memory, file descriptors, GC,
+  and uploaded image size.
+
 ### 7. Prepare Neural Network Models
 
 Training workspaces live in `../ml`. Their `make train` targets publish model

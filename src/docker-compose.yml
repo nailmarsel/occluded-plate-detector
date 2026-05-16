@@ -152,8 +152,12 @@ services:
     environment:
       - GF_SERVER_ROOT_URL=${PUBLIC_BASE_URL:-http://localhost}/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/autobahncv/autobahncv-overview.json
     expose:
       - "3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards/autobahncv:ro
     depends_on:
       - prometheus
     networks:

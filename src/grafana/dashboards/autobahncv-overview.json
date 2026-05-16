@@ -1,0 +1,27 @@
+{
+  "annotations": {"list": [{"builtIn": 1, "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}, "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}, "id": 1, "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true}, "pluginVersion": "13.0.1", "targets": [{"expr": "up{job=\"autobahncv\"}", "legendFormat": "app", "refId": "A"}], "title": "Application Up", "type": "stat"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "reqps"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 6, "y": 0}, "id": 2, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "sum by (handler, method, status) (rate(http_requests_total{handler!=\"/metrics\"}[5m]))", "legendFormat": "{{method}} {{handler}} {{status}}", "refId": "A"}], "title": "API Request Rate", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}, "overrides": []}, "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}, "id": 3, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "sum by (endpoint) (increase(autobahncv_images_processed_total[1h]))", "legendFormat": "{{endpoint}}", "refId": "A"}], "title": "Images Processed Per Hour", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}}, "overrides": []}, "gridPos": {"h": 4, "w": 6, "x": 0, "y": 4}, "id": 4, "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true}, "pluginVersion": "13.0.1", "targets": [{"expr": "sum(increase(http_requests_total{status!~\"2..\",handler!=\"/metrics\"}[1h]))", "legendFormat": "errors", "refId": "A"}], "title": "HTTP Errors Last Hour", "type": "stat"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "s"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}, "id": 5, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "sum by (handler, method) (rate(http_request_duration_seconds_sum{handler!=\"/metrics\"}[5m])) / sum by (handler, method) (rate(http_request_duration_seconds_count{handler!=\"/metrics\"}[5m]))", "legendFormat": "{{method}} {{handler}}", "refId": "A"}], "title": "Average Request Duration", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "s"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}, "id": 6, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A"}, {"expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_highr_seconds_bucket[5m])))", "legendFormat": "p50", "refId": "B"}], "title": "Overall Latency Quantiles", "type": "timeseries"}
+  ],
+  "preload": false,
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["autobahncv", "api"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AutobahnCV Overview",
+  "uid": "autobahncv-overview",
+  "version": 1
+}

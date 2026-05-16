@@ -1,0 +1,29 @@
+{
+  "annotations": {"list": [{"builtIn": 1, "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}, "overrides": []}, "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}, "id": 1, "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true}, "pluginVersion": "13.0.1", "targets": [{"expr": "up{job=\"autobahncv\"}", "legendFormat": "app scrape", "refId": "A"}], "title": "Prometheus Scrape Up", "type": "stat"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "bytes"}, "overrides": []}, "gridPos": {"h": 8, "w": 9, "x": 6, "y": 0}, "id": 2, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "process_resident_memory_bytes", "legendFormat": "resident", "refId": "A"}, {"expr": "process_virtual_memory_bytes", "legendFormat": "virtual", "refId": "B"}], "title": "App Memory", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "percentunit"}, "overrides": []}, "gridPos": {"h": 8, "w": 9, "x": 15, "y": 0}, "id": 3, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "rate(process_cpu_seconds_total[5m])", "legendFormat": "cpu", "refId": "A"}], "title": "App CPU", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.7}, {"color": "red", "value": 0.9}]}}, "overrides": []}, "gridPos": {"h": 4, "w": 6, "x": 0, "y": 4}, "id": 4, "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true}, "pluginVersion": "13.0.1", "targets": [{"expr": "process_open_fds / process_max_fds", "legendFormat": "fd usage", "refId": "A"}], "title": "File Descriptor Usage", "type": "stat"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}, "id": 5, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "rate(python_gc_collections_total[5m])", "legendFormat": "generation {{generation}}", "refId": "A"}], "title": "Python GC Collections", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}, "overrides": []}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}, "id": 6, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "python_gc_objects_uncollectable_total", "legendFormat": "generation {{generation}}", "refId": "A"}], "title": "Uncollectable GC Objects", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "s"}, "overrides": []}, "gridPos": {"h": 7, "w": 12, "x": 0, "y": 16}, "id": 7, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "scrape_duration_seconds{job=\"autobahncv\"}", "legendFormat": "scrape duration", "refId": "A"}], "title": "Prometheus Scrape Duration", "type": "timeseries"},
+    {"datasource": {"type": "prometheus", "uid": "prometheus"}, "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "bytes"}, "overrides": []}, "gridPos": {"h": 7, "w": 12, "x": 12, "y": 16}, "id": 8, "options": {"legend": {"displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}, "targets": [{"expr": "sum(rate(autobahncv_image_size_bytes_sum[5m])) / sum(rate(autobahncv_image_size_bytes_count[5m]))", "legendFormat": "avg uploaded image size", "refId": "A"}], "title": "Average Uploaded Image Size", "type": "timeseries"}
+  ],
+  "preload": false,
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["autobahncv", "runtime"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AutobahnCV Runtime",
+  "uid": "autobahncv-runtime",
+  "version": 1
+}
