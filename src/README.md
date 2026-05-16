@@ -138,12 +138,12 @@ network.
 **Services available through the gateway:**
 | Service | URL | Purpose |
 |---------|-----|---------|
-| App UI | `http://localhost:3000/app/` | React web UI |
-| API | `http://localhost:3000/api/v1` | FastAPI API |
-| Swagger Docs | `http://localhost:3000/docs` | Interactive API docs |
-| Grafana | `http://localhost:3000/grafana/` | Monitoring dashboards |
-| Kibana | `http://localhost:3000/kibana/` | ES visualization |
-| Metrics | `http://localhost:3000/metrics` | Prometheus metrics endpoint |
+| App UI | `http://localhost/app/` | React web UI |
+| API | `http://localhost/api/v1` | FastAPI API |
+| Swagger Docs | `http://localhost/docs` | Interactive API docs |
+| Grafana | `http://localhost/grafana/` | Monitoring dashboards |
+| Kibana | `http://localhost/kibana/` | ES visualization |
+| Metrics | `http://localhost/metrics` | Prometheus metrics endpoint |
 
 ### 7. Prepare Neural Network Models
 
@@ -242,12 +242,12 @@ docker compose --profile full up -d
 
 The application will be available at:
 
-- **Frontend (UI)**: `http://localhost:3000/app/`
-- **API Base**: `http://localhost:3000/api/v1`
-- **Swagger Docs**: `http://localhost:3000/docs`
-- **ReDoc**: `http://localhost:3000/redoc`
-- **Grafana**: `http://localhost:3000/grafana/`
-- **Kibana**: `http://localhost:3000/kibana/`
+- **Frontend (UI)**: `http://localhost/app/`
+- **API Base**: `http://localhost/api/v1`
+- **Swagger Docs**: `http://localhost/docs`
+- **ReDoc**: `http://localhost/redoc`
+- **Grafana**: `http://localhost/grafana/`
+- **Kibana**: `http://localhost/kibana/`
 
 ## API Documentation
 
