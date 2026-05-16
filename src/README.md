@@ -145,6 +145,10 @@ network.
 | Kibana | `http://localhost/kibana/` | ES visualization |
 | Metrics | `http://localhost/metrics` | Prometheus metrics endpoint |
 
+Use `http://localhost/grafana/` for Grafana login. The development compose
+file also trusts `http://127.0.0.1`, but using one hostname consistently avoids
+browser cookie and origin mismatches.
+
 Grafana is provisioned automatically from `src/grafana`. The full stack creates
 the Prometheus datasource and an `AutobahnCV` folder with these dashboards:
 
