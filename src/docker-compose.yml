@@ -14,9 +14,9 @@ services:
       - cluster.routing.allocation.disk.watermark.flood_stage.frozen.max_headroom=20gb
       - cluster.routing.allocation.disk.watermark.high=95%
       - cluster.routing.allocation.disk.watermark.flood_stage=98%
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+    expose:
+      - "9200"
+      - "9300"
     volumes:
       - es_data:/usr/share/elasticsearch/data
     networks:
@@ -35,9 +35,9 @@ services:
     environment:
       - MINIO_ROOT_USER=Q3AM3UQ867SPQQA43P2F
       - MINIO_ROOT_PASSWORD=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web Console
+    expose:
+      - "9000"   # S3 API
+      - "9001"   # Web Console
     volumes:
       - minio_data:/data
     networks:
@@ -123,13 +123,17 @@ services:
     container_name: autobahncv-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
+      - SERVER_PUBLICBASEURL=${PUBLIC_BASE_URL:-http://localhost:3000}/kibana
+    expose:
+      - "5601"
     depends_on:
       - elasticsearch
     networks:
       - autobahncv-network
     profiles:
+      - full
       - monitoring
 
   prometheus:
@@ -137,16 +141,19 @@ services:
     container_name: autobahncv-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
     networks:
       - autobahncv-network
 
   grafana:
     image: grafana/grafana:latest
     container_name: autobahncv-grafana
-    ports:
-      - "3001:3000"
+    environment:
+      - GF_SERVER_ROOT_URL=${PUBLIC_BASE_URL:-http://localhost:3000}/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    expose:
+      - "3000"
     depends_on:
       - prometheus
     networks:
@@ -156,8 +163,8 @@ services:
   app:
     build: .
     container_name: autobahncv-app
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       - DEBUG=False
       - ML_STRICT_STARTUP=False
@@ -199,14 +206,32 @@ services:
   frontend:
     build: ./frontend
     container_name: autobahncv-frontend
-    ports:
-      - "3000:80"
+    expose:
+      - "80"
     depends_on:
       - app
     networks:
       - autobahncv-network
     profiles:
       - full
+
+  gateway:
+    image: nginx:alpine
+    container_name: autobahncv-gateway
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - app
+      - grafana
+      - kibana
+    networks:
+      - autobahncv-network
+    profiles:
+      - full
+
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.19.0
     container_name: autobahncv-mlflow
@@ -216,8 +241,8 @@ services:
       --default-artifact-root /mlflow-artifacts
       --host 0.0.0.0
       --port 5000
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     volumes:
       - mlflow_data:/mlflow-artifacts
     networks:
