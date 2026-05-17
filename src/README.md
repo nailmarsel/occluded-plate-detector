@@ -187,6 +187,32 @@ If a training run was completed without `--publish`, copy the workspace
 `runs/.../best.pt` checkpoint to the corresponding `src/models/*.pt` artifact
 name above.
 
+The `full` Docker Compose profile runs a one-shot `models-setup` service before
+the app starts. If any required file is missing from `src/models`, it downloads
+the artifact from the GitHub Release configured by:
+
+```env
+MODEL_RELEASE_REPO=nailmarsel/occluded-plate-detector
+MODEL_RELEASE_TAG=models-v1
+```
+
+Checksums are stored in `model-release.sha256` and are verified before startup.
+For a private repository, provide a token with release read access:
+
+```bash
+GITHUB_TOKEN=ghp_... docker compose --profile full up -d
+```
+
+To publish the current local model files to the release, run from `src`:
+
+```bash
+GITHUB_TOKEN=ghp_... python scripts/upload_release_models.py --replace
+```
+
+That command creates the `models-v1` release if needed and uploads:
+`car_detector.pt`, `license_plate_detector.pt`, `plate_ocr.pt`,
+`car_embedder.pt`, and `model-release.sha256`.
+
 For Russian license plates, do not rely on the heuristic plate crop fallback in
 production. License plates are not part of the COCO classes used by the default
 YOLO vehicle model, so `NEURON2_PLATE_DETECTION_MODEL` must point to custom

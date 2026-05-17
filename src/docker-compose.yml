@@ -171,6 +171,27 @@ services:
       - autobahncv-network
 
   # AutobahnCV Application
+  models-setup:
+    image: python:3.11.15-slim
+    container_name: autobahncv-models-setup
+    working_dir: /app
+    command: python scripts/download_release_models.py
+    environment:
+      - MODEL_RELEASE_REPO=${MODEL_RELEASE_REPO:-nailmarsel/occluded-plate-detector}
+      - MODEL_RELEASE_TAG=${MODEL_RELEASE_TAG:-models-v1}
+      - MODEL_DIR=/models
+      - MODEL_SHA256_FILE=/app/model-release.sha256
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GH_TOKEN=${GH_TOKEN:-}
+    volumes:
+      - ./scripts/download_release_models.py:/app/scripts/download_release_models.py:ro
+      - ./model-release.sha256:/app/model-release.sha256:ro
+      - ./models:/models
+    networks:
+      - autobahncv-network
+    profiles:
+      - full
+
   app:
     build: .
     container_name: autobahncv-app
@@ -207,6 +228,8 @@ services:
       es-setup:
         condition: service_completed_successfully
       minio-setup:
+        condition: service_completed_successfully
+      models-setup:
         condition: service_completed_successfully
     networks:
       - autobahncv-network
