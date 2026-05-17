@@ -145,6 +145,21 @@ network.
 | Kibana | `http://localhost/kibana/` | ES visualization |
 | Metrics | `http://localhost/metrics` | Prometheus metrics endpoint |
 
+Use `http://localhost/grafana/` for Grafana login. The development compose
+file also trusts `http://127.0.0.1`, but using one hostname consistently avoids
+browser cookie and origin mismatches. If Grafana was restarted while your
+browser was open, clear cookies/site data for `localhost` and `127.0.0.1`, then
+log in again.
+
+Grafana is provisioned automatically from `src/grafana`. The full stack creates
+the Prometheus datasource and an `AutobahnCV` folder with these dashboards:
+
+- `AutobahnCV Overview`: API traffic, errors, latency, and processed images.
+- `AutobahnCV ML Pipeline`: detector/OCR confidence, plate quality, failures,
+  search similarity, and feedback actions.
+- `AutobahnCV Runtime`: app scrape health, CPU, memory, file descriptors, GC,
+  and uploaded image size.
+
 ### 7. Prepare Neural Network Models
 
 Training workspaces live in `../ml`. Their `make train` targets publish model
