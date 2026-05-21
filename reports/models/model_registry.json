@@ -1,0 +1,56 @@
+{
+  "project": "AutobahnCV Occluded Plate Detector",
+  "registry_policy_version": "2026-05-21",
+  "current_stage": "mvp-production",
+  "promotion_strategy": "manual_approval_required",
+  "rollback_strategy": "previous_stable_manifest",
+  "required_models": [
+    {
+      "name": "car_detector",
+      "env_var": "NEURON1_CAR_DETECTION_MODEL",
+      "current_path": "/app/models/car_detector.pt",
+      "local_artifact": "src/models/car_detector.pt",
+      "rollback_path": "/app/models/rollback/car_detector.pt"
+    },
+    {
+      "name": "license_plate_detector",
+      "env_var": "NEURON2_PLATE_DETECTION_MODEL",
+      "current_path": "/app/models/license_plate_detector.pt",
+      "local_artifact": "src/models/license_plate_detector.pt",
+      "rollback_path": "/app/models/rollback/license_plate_detector.pt"
+    },
+    {
+      "name": "plate_ocr",
+      "env_var": "NEURON3_OCR_MODEL",
+      "current_path": "/app/models/plate_ocr.pt",
+      "local_artifact": "src/models/plate_ocr.pt",
+      "rollback_path": "/app/models/rollback/plate_ocr.pt"
+    },
+    {
+      "name": "car_embedder",
+      "env_var": "NEURON4_RESNET_MODEL",
+      "current_path": "/app/models/car_embedder.pt",
+      "local_artifact": "src/models/car_embedder.pt",
+      "rollback_path": "/app/models/rollback/car_embedder.pt"
+    }
+  ],
+  "promotion_checks": [
+    "release_evidence_json_passes",
+    "validation_report_updated",
+    "backend_tests_pass",
+    "manual_owner_approval",
+    "rollback_artifacts_available"
+  ],
+  "rollback_triggers": [
+    "p95_latency_above_2s_for_5m",
+    "error_rate_above_10_percent_for_5m",
+    "ocr_confidence_drop_below_0_65",
+    "fallback_rate_above_50_percent_for_10m",
+    "operator_reject_or_disputed_spike"
+  ],
+  "owners": {
+    "ml_quality": "ML engineer",
+    "deployment": "Backend/DevOps engineer",
+    "release_approval": "Project lead"
+  }
+}
