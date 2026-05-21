@@ -1,8 +1,14 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+    )
 
     # Application
     APP_NAME: str = "AutobahnCV - Car License Plate Search"
@@ -48,11 +54,6 @@ class Settings(BaseSettings):
     # Search
     SEARCH_TOP_K: int = 5
     EMBEDDING_SIMILARITY_THRESHOLD: float = 0.7
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
 
 
 settings = Settings()

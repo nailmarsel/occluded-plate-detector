@@ -1,0 +1,96 @@
+{
+  "project": "AutobahnCV Occluded Plate Detector",
+  "release_decision": "MVP_READY_WITH_LIMITATIONS",
+  "generated_from": {
+    "ocr_eval_command": "ml/plate_ocr/.venv/bin/python ml/plate_ocr/scripts/evaluate_plate_ocr.py --batch-size 256 --workers 0 --device cpu",
+    "ocr_eval_output": "exact_match=0.8453 (2405/2845)"
+  },
+  "model_artifacts": [
+    {
+      "name": "car_detector",
+      "path": "src/models/car_detector.pt",
+      "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+      "min_size_bytes": 1
+    },
+    {
+      "name": "license_plate_detector",
+      "path": "src/models/license_plate_detector.pt",
+      "sha256": "b59bb101cf1ebf5af2f53558029e58c1103b93e9a91d22f7e152fb3c325f9559",
+      "min_size_bytes": 1
+    },
+    {
+      "name": "plate_ocr",
+      "path": "src/models/plate_ocr.pt",
+      "sha256": "19f9b015caa9b723a8ed9ef1da40fbc582f964c36c6bdd7399a7438a73d5f911",
+      "min_size_bytes": 1
+    },
+    {
+      "name": "car_embedder",
+      "path": "src/models/car_embedder.pt",
+      "sha256": "30e93c02a018aa293682b20f43bc4be1dd18ffc8a73881a4c07d76f27c56397e",
+      "min_size_bytes": 1
+    }
+  ],
+  "mvp_metrics": [
+    {
+      "name": "plate_ocr_exact_match",
+      "observed": 0.8453,
+      "threshold": 0.8,
+      "sample_size": 2845,
+      "passed": true,
+      "evidence": "ml/plate_ocr/data/manifests/test.csv"
+    },
+    {
+      "name": "model_artifacts_present",
+      "observed": 4,
+      "threshold": 4,
+      "sample_size": 4,
+      "passed": true,
+      "evidence": "src/models/"
+    },
+    {
+      "name": "api_service_e2e_tests",
+      "observed": 1,
+      "threshold": 1,
+      "sample_size": 1,
+      "passed": true,
+      "evidence": "src/tests/test_e2e_pipeline.py"
+    },
+    {
+      "name": "release_governance_rollback",
+      "observed": 1,
+      "threshold": 1,
+      "sample_size": 1,
+      "passed": true,
+      "evidence": "HW/ROLLBACK_RUNBOOK.md"
+    }
+  ],
+  "production_targets": [
+    {
+      "name": "car_detector_map50",
+      "threshold": 0.92,
+      "status": "requires_final_validation_report"
+    },
+    {
+      "name": "license_plate_detector_map50",
+      "threshold": 0.90,
+      "status": "requires_final_validation_report"
+    },
+    {
+      "name": "plate_ocr_accuracy",
+      "threshold": 0.95,
+      "observed": 0.8453,
+      "status": "below_production_target"
+    },
+    {
+      "name": "car_embedder_top5_accuracy",
+      "threshold": 0.96,
+      "status": "requires_final_validation_report"
+    }
+  ],
+  "limitations": [
+    "MVP gate is passed, but OCR is below the production DoD target of 0.95.",
+    "Full image-to-top-5 production validation still needs a fixed labelled dataset and CI automation.",
+    "Occlusion-aware automatic '*' masking remains a next model improvement."
+  ]
+}
