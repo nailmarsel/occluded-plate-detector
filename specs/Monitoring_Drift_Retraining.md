@@ -99,7 +99,7 @@
 | Сбор метрик | `prometheus-client` + `/metrics` endpoint |
 | Хранение / агрегация | Prometheus |
 | Дашборды | Grafana |
-| Drift-профилирование | `scripts/check_drift.py` (PSI по распределениям) + алерты Prometheus |
+| Drift-профилирование | `scripts/check_drift.py` (PSI по распределениям) + документированные alert thresholds |
 | Логи инференса / feedback | Elasticsearch (`inference-logs`, `feedback-logs`), просмотр через Kibana |
 | Версионирование моделей | MLflow Model Registry |
 | Audit / retraining | `scripts/retrain.py` (автоматизированный цикл) |
@@ -115,14 +115,15 @@
 
 Baseline хранится в `reports/data/drift_baseline.json` и обновляется после
 каждого подтверждённого релиза модели. Оперативный drift дополнительно
-отслеживается алертами Prometheus (см. §8) и сравнением распределений в индексе
-Elasticsearch `inference-logs` за разные временные окна.
+отслеживается документированными thresholds (см. §8) и сравнением
+распределений в индексе Elasticsearch `inference-logs` за разные временные
+окна; автоматические alert rules остаются production hardening task.
 
 ## 11. Триггеры аудита
 
 Аудит модели запускается, если выполнено хотя бы одно условие:
 
-- сработал алерт Error Rate / Fallback / Confidence Drop;
+- превышен threshold Error Rate / Fallback / Confidence Drop;
 - доля low-confidence предсказаний > 30% в течение 1 часа;
 - накоплено более 50 `disputed` кейсов в `feedback-logs`;
 - `scripts/check_drift.py` показал PSI ≥ 0.10 по любому ключевому признаку;
@@ -138,7 +139,7 @@ Elasticsearch `inference-logs` за разные временные окна.
 - накоплено достаточно исправленных операторами примеров (порог по умолчанию —
   500 размеченных образцов), статистически улучшающих метрики на валидации.
 
-Переобучение **не нужно**, если метрики стабильны, алерты не срабатывают,
+Переобучение **не нужно**, если метрики стабильны, thresholds не превышаются,
 PSI < 0.10 и новых данных нет, либо кандидат не показывает улучшений.
 
 ## 13. Процедура переобучения

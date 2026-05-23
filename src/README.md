@@ -55,7 +55,7 @@ src/
 └── README.md
 ```
 
-The CI/CD workflows for this app live at the repository root in
+The CI workflows for this app live at the repository root in
 `.github/workflows/`, because GitHub Actions only runs workflows from that
 location.
 
@@ -533,20 +533,23 @@ The Elasticsearch index must have the following mapping:
 Run `scripts/setup_elasticsearch.sh` manually if you're not using Docker Compose, or run the `es-setup` job via
 `docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 2048.
 
-## CI/CD
+## CI
 
 ### GitHub Actions
 
 | Workflow                               | Trigger                   | What it does                                                                             |
 |----------------------------------------|---------------------------|------------------------------------------------------------------------------------------|
-| **CI** (`../.github/workflows/ci.yml`) | Push/PR touching `src/**` | Lint (ruff), type check (mypy), run tests, build Docker                                  |
-| **CD** (`../.github/workflows/cd.yml`) | Git tag `v*`              | Build & push the AutobahnCV backend Docker image to GHCR, create release, deploy via SSH |
+| **CI** (`../.github/workflows/ci.yml`) | Push/PR touching `src/**` | Lint backend code with Ruff and run pytest tests |
 
 The workflows set `src` as their working directory so app-local commands
-such as `pip install -r requirements.txt`, `pytest tests/`, and Docker builds
-continue to work after integrating the app into the larger project repository.
+such as `pip install -r requirements.txt` and `pytest tests/` continue to work
+after integrating the app into the larger project repository.
 
 ### Required GitHub Secrets
+
+No secrets are required by the current CI workflow.
+
+Deploy-oriented secrets are only needed if a future CD workflow is added:
 
 ```
 DEPLOY_HOST          # Server IP/hostname

@@ -12,49 +12,45 @@
   * `car_embedder` (ResNet‑50, dims=2048).
 
 **Инфраструктура:**
-* GPU‑поддержка работает из коробки.
+* CPU inference path поддерживается; GPU может использоваться PyTorch/Ultralytics при наличии подходящего runtime, но Docker Compose не настраивает GPU явно.
 * Fallback‑поведение корректно: при `ML_ALLOW_HEURISTIC_PLATE_FALLBACK=False` система честно сообщает об ошибке, а не пытается угадать, где номер.
 * Frontend (React 18 + Vite) позволяет:
   * добавлять автомобиль в базу;
   * искать автомобили по фото и номеру.
 * Docker Compose поднимает полный стек:
-  * Elasticsearch 8.11 с cosine‑similarity и автоматическим созданием индекса (`es-setup`);
+  * Elasticsearch 8.19 с cosine‑similarity и автоматическим созданием индекса (`es-setup`);
   * MinIO с bucket‑настройкой (`minio-setup`);
   * FastAPI‑приложение с непривилегированным пользователем `appuser` и HEALTHCHECK на `/api/v1/health`;
 
 
 **Наблюдаемость:**
-* Реализованы 10+ Prometheus‑метрик (throughput, error rate, p95 latency, confidence по каждому нейрону, fallback rate, similarity score) в `metrics.py`.
-* Созданы 4 Grafana‑дашборда (`src/grafana/dashboards/`):
-  * Service Metrics;
-  * Input Data;
-  * Model Predictions;
-  * Quality & Drift.
-* Настроены 6 алертов:
-  * Error Rate > 10 %;
-  * p95 > 2 с;
-  * Confidence Drop < 0.6;
-  * Fallback Rate > 50 %;
-  * Low‑Confidence > 30 %.
+* Реализованы custom Prometheus‑метрики для обработанных изображений, input errors, failures по стадиям, confidence, fallback, similarity score и feedback в `metrics.py`.
+* Созданы 3 Grafana‑дашборда (`src/grafana/dashboards/`):
+  * AutobahnCV Overview;
+  * AutobahnCV ML Pipeline;
+  * AutobahnCV Runtime.
+* Пороги инцидентов описаны в monitoring docs и rollback runbook; provisioned alert rules в репозитории пока не добавлены.
 * Каждый инференс логируется в ES‑индекс `inference-logs`.
 * Обратная связь логируется в `feedback-logs`.
 
-**CI/CD и автоматизация:**
-* CI/CD запускает `ruff check` и `pytest` на каждый push.
+**CI и автоматизация:**
+* CI запускает `ruff check` и `pytest` на каждый push/PR, который затрагивает `src/**`.
 * Валидация входных данных через Pydantic покрыта тестами.
-* Скрипт `scripts/register_models.py` автоматизирует полный цикл регистрации в MLflow: артефакт, метрики, датасет, стейдж Staging → Production.
+* `scripts/verify_release_gates.py` проверяет release evidence, model registry contract и rollback runbook; MLflow сервис присутствует в Docker Compose.
 
 
 ## Следующие шаги
 
-1. Загрузить API‑роутеры FastAPI и проверить:
-   * вызов `log_inference_event()` после каждого прохода через пайплайн;
-   * отправку Prometheus‑метрик после каждого инференса.
-2. Добавить проверку покрытия тестов в CI/CD:
+1. Добавить provisioned alert rules для production-порогов:
+   * Error Rate > 10%;
+   * p95 > 2 с;
+   * Confidence Drop;
+   * Fallback Rate > 50%;
+   * Low-confidence / empty-plate spikes.
+2. Добавить проверку покрытия тестов в CI:
    * Добавить команду `pytest --cov=app --cov-fail-under=85`.
    * Обеспечить покрытие ≥ 85 %.
-3. Перед деплоем:
-   * Запустить `scripts/register_models.py` для всех четырёх моделей с метриками валидации.
-   * Перевести модели в стейдж `Production`.
-4. Документация:
-   * Написать **Disaster Recovery Runbook** (набор сценариев: что случилось → как диагностировать → как исправить → как проверить результат).
+3. Перед production-деплоем:
+   * обновить `reports/models/VALIDATION_REPORT.md` и `release_evidence.json`;
+   * получить финальные detector/embedder metrics;
+   * проверить rollback artifacts и staging smoke test.
