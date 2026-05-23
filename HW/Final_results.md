@@ -171,7 +171,8 @@ API и frontend готовы, ML pipeline интегрирован, а вокр�
 
    Описать процесс продвижения модели: candidate model, offline validation,
    shadow/staging check, production promotion, monitoring window и rollback
-   procedure.
+   procedure. Проверить `HW/ROLLBACK_RUNBOOK.md` на staging и добавить
+   конкретные ссылки на MLflow runs / Docker images для production.
 
 8. **Использовать feedback data для retraining.**
 

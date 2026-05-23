@@ -11,8 +11,8 @@
 | 3 | **Автоматические тесты (pytest)** | `src/tests/` содержит `test_endpoints.py`, `test_ocr.py`, `test_services.py`; CI запускает `pytest tests/` |
 | 4 | **Валидация входных данных** | API отклоняет неверный формат, пустые файлы и некорректный content-type (реализовано и покрыто тестами) |
 | 5 | **Контейнеризация** | `Dockerfile` + `docker-compose.yml` с полным стеком (ES, MinIO, Prometheus, Grafana, MLflow, app, frontend, Nginx) |
-| 6 | **Мониторинг (Prometheus + Grafana)** | `metrics.py` реализует 10+ метрик; `prometheus.yml` настроен; 3 Grafana-дашборда в `src/grafana/dashboards/` |
-| 7 | **Observability / logging** | Логирование в Elasticsearch (индексы `inference-logs`, `feedback-logs`); алерты по error rate, latency, confidence, fallback rate |
+| 6 | **Мониторинг (Prometheus + Grafana)** | `metrics.py` реализует custom ML/input metrics; `prometheus.yml` настроен; 3 Grafana-дашборда в `src/grafana/dashboards/` |
+| 7 | **Observability / logging** | Логирование в Elasticsearch (индексы `inference-logs`, `feedback-logs`); dashboards показывают error/latency/confidence/fallback/feedback signals |
 | 8 | **Human Feedback Loop** | Эндпоинт `POST /api/v1/feedback`; метрика `autobahncv_feedback_actions_total`; сохранение в ES |
 | 9 | **MLflow Model Registry** | MLflow сервис задеплоен в `docker-compose.yml`; политика Staging → Production описана в `specs/Monitoring_Drift_Retraining.md` |
 | 10 | **Техническая документация** | `specs/PRD.md`, `specs/DoD.md`, `specs/Data_Spec.md`; `HW/Lekciya-6/` (AI_SYSTEM_DOC, API, INFERENCE_PIPELINE, SLO-SLI, TOOLS) |

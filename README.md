@@ -42,7 +42,7 @@ dataset and returns the most likely full license plates.
 
 | Path | Contents |
 |------|----------|
-| `/specs/` | Product & engineering specs: `PRD.md`, `Data_Spec.md`, `DoD.md`, `Acceptance_Criteria.md`, `Data_Contract.md`, `Annotation_Guidelines.md`, `Monitoring_Drift_Retraining.md` |
+| `/specs/` | Product & engineering specs: `PRD.md`, `Data_Spec.md`, `DoD.md`, `Monitoring_Drift_Retraining.md` |
 | `/src/` | Application code: FastAPI backend, React frontend, Docker Compose, Grafana/Prometheus config |
 | `/ml/` | Four model workspaces (`car_detector`, `plate_detector`, `plate_ocr`, `car_embedder`) with train/eval/predict scripts |
 | `/notebooks/` | Exploration and training notebooks |
@@ -50,7 +50,7 @@ dataset and returns the most likely full license plates.
 | `/scripts/` | Operational scripts: `validate_dataset.py`, `verify_release_gates.py`, `check_drift.py`, `retrain.py` |
 | `/HW/` | Course deliverables and release decision documents |
 | `/tests/` | Sample test images (full and partially occluded plates) |
-| `/.github/workflows/` | CI pipeline (lint, tests, coverage, dataset validation) |
+| `/.github/workflows/` | CI pipeline for backend linting and tests |
 
 ## 4. System Architecture
 
@@ -59,7 +59,9 @@ The system uses a modular pipeline of four ML "neurons" behind a FastAPI layer:
 - **Image Input Module** — accepts and validates the uploaded image.
 - **Car Detection Module** — YOLOv8 locates the vehicle and crops it.
 - **License Plate Detection Module** — YOLOv8 locates the plate region.
-- **OCR Module** — recognizes the visible plate text; supports wildcards (`*`, `?`).
+- **OCR Module** — recognizes the visible plate text.
+- **Partial Plate Query** — lets an operator use wildcards (`*`, `?`) for
+  hidden characters.
 - **Embedding Module** — ResNet-50 produces a 2048-dim car embedding.
 - **Similarity Search Module** — Elasticsearch kNN search over embeddings.
 - **API Layer** — exposes search, indexing, image retrieval and feedback endpoints.
@@ -77,7 +79,8 @@ Elasticsearch). Details, dashboards and the retraining policy are documented in
   `src/grafana/dashboards/`: **AutobahnCV Overview**, **AutobahnCV ML Pipeline**,
   **AutobahnCV Runtime**.
 - **Drift** — `scripts/check_drift.py` compares recent inference distributions
-  against a stored baseline; operational drift also raises Prometheus alerts.
+  against a stored baseline; alert rule provisioning is tracked as production
+  hardening work.
 - **Logging** — every inference and feedback event is stored in the
   Elasticsearch indices `inference-logs` and `feedback-logs`.
 - **Retraining** — `scripts/retrain.py` automates the audit → retrain → register
@@ -98,7 +101,8 @@ Elasticsearch). Details, dashboards and the retraining policy are documented in
 1. Client sends a car photo to `POST /api/v1/search` (optional `plate_query`).
 2. Input validation runs the same fail-fast checks.
 3. YOLOv8 detects the car → crops it → detects the plate region.
-4. OCR recognizes the visible plate fragment; unreadable characters stay as `*`/`?`.
+4. OCR recognizes the visible plate fragment; the optional `plate_query` can
+   contain operator-provided wildcards (`*`, `?`) for hidden characters.
 5. ResNet-50 produces the query embedding.
 6. Elasticsearch performs kNN similarity search, optionally filtered by the plate fragment.
 7. The API returns the top-5 candidate cars with similarity scores and stored images.
@@ -121,9 +125,9 @@ A diagram of the inference pipeline is in
 git clone https://github.com/nailmarsel/occluded-plate-detector.git
 cd occluded-plate-detector/src
 
-# 1. Create the environment file and set your own MinIO credentials
+# 1. Create the environment file and set your own S3/MinIO credentials
 cp .env.example .env
-#    edit .env: set MINIO_ROOT_USER / MINIO_ROOT_PASSWORD / S3_ACCESS_KEY / S3_SECRET_KEY
+#    edit .env: set S3_ACCESS_KEY / S3_SECRET_KEY
 
 # 2. Put the four .pt weight files into src/models/
 
@@ -182,7 +186,7 @@ uvicorn app.main:app --reload --port 8000
 
 | Путь | Содержимое |
 |------|------------|
-| `/specs/` | Спецификации: `PRD.md`, `Data_Spec.md`, `DoD.md`, `Acceptance_Criteria.md`, `Data_Contract.md`, `Annotation_Guidelines.md`, `Monitoring_Drift_Retraining.md` |
+| `/specs/` | Спецификации: `PRD.md`, `Data_Spec.md`, `DoD.md`, `Monitoring_Drift_Retraining.md` |
 | `/src/` | Код приложения: FastAPI-backend, React-frontend, Docker Compose, конфигурация Grafana/Prometheus |
 | `/ml/` | Четыре workspace моделей (`car_detector`, `plate_detector`, `plate_ocr`, `car_embedder`) со скриптами train/eval/predict |
 | `/notebooks/` | Ноутбуки для исследований и обучения |
@@ -190,14 +194,15 @@ uvicorn app.main:app --reload --port 8000
 | `/scripts/` | Операционные скрипты: `validate_dataset.py`, `verify_release_gates.py`, `check_drift.py`, `retrain.py` |
 | `/HW/` | Учебные материалы и документы по релизному решению |
 | `/tests/` | Тестовые изображения (полные и частично перекрытые номера) |
-| `/.github/workflows/` | CI-пайплайн (линтинг, тесты, покрытие, валидация датасета) |
+| `/.github/workflows/` | CI-пайплайн для backend-линтинга и тестов |
 
 ## 4. Архитектура системы
 
 Система построена как модульный пайплайн из четырёх ML-«нейронов» за слоем FastAPI:
 модуль загрузки изображения, детекция автомобиля (YOLOv8), детекция номера
-(YOLOv8), OCR номера (с поддержкой wildcard `*`, `?`), эмбеддинг автомобиля
-(ResNet-50), поиск похожих (kNN в Elasticsearch) и API-слой.
+(YOLOv8), OCR номера, ручной partial-plate query с wildcard `*`/`?`,
+эмбеддинг автомобиля (ResNet-50), поиск похожих (kNN в Elasticsearch) и
+API-слой.
 
 ## 5. Наблюдаемость и мониторинг
 
@@ -222,9 +227,9 @@ uvicorn app.main:app --reload --port 8000
 git clone https://github.com/nailmarsel/occluded-plate-detector.git
 cd occluded-plate-detector/src
 
-# 1. Создать .env и задать собственные ключи MinIO
+# 1. Создать .env и задать собственные ключи S3/MinIO
 cp .env.example .env
-#    отредактировать .env: MINIO_ROOT_USER / MINIO_ROOT_PASSWORD / S3_ACCESS_KEY / S3_SECRET_KEY
+#    отредактировать .env: S3_ACCESS_KEY / S3_SECRET_KEY
 
 # 2. Положить четыре файла весов в src/models/
 
@@ -234,5 +239,4 @@ docker compose --profile full up -d --build
 
 Веб-интерфейс оператора — http://localhost/, API — http://localhost/api/v1,
 Grafana — http://localhost/grafana, Kibana — http://localhost/kibana.
-Подробные шаги, smoke-тест и команды для тестов/линтинга — в английской версии
-(разделы 7.1–7.6).
+Подробные шаги быстрого старта — в английской версии (разделы 7.1–7.4).
