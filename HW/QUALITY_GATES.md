@@ -14,7 +14,7 @@
 | 6 | **Мониторинг (Prometheus + Grafana)** | `metrics.py` реализует 10+ метрик; `prometheus.yml` настроен; 3 Grafana-дашборда в `src/grafana/dashboards/` |
 | 7 | **Observability / logging** | Логирование в Elasticsearch (индексы `inference-logs`, `feedback-logs`); алерты по error rate, latency, confidence, fallback rate |
 | 8 | **Human Feedback Loop** | Эндпоинт `POST /api/v1/feedback`; метрика `autobahncv_feedback_actions_total`; сохранение в ES |
-| 9 | **MLflow Model Registry** | MLflow сервис задеплоен в `docker-compose.yml`; политика Staging → Production описана в `HW/lekciya-7.md` |
+| 9 | **MLflow Model Registry** | MLflow сервис задеплоен в `docker-compose.yml`; политика Staging → Production описана в `specs/Monitoring_Drift_Retraining.md` |
 | 10 | **Техническая документация** | `specs/PRD.md`, `specs/DoD.md`, `specs/Data_Spec.md`; `HW/Lekciya-6/` (AI_SYSTEM_DOC, API, INFERENCE_PIPELINE, SLO-SLI, TOOLS) |
 
 ---
@@ -37,4 +37,3 @@
 | 1 | **Type checking (mypy)** | `pyproject.toml` содержит конфигурацию mypy, но в CI шага с `mypy app/` **нет**; флаги `disallow_untyped_defs = false` / `no_strict_optional = true` делают проверку нестрогой |
 | 2 | **Coverage enforcement в CI** | Тесты запускаются без `pytest-cov`; необходимо добавить `--cov=app --cov-fail-under=85` для соответствия DoD п.6 |
 | 3 | **Disaster Recovery** | DoD п.10 требует пошаговую инструкцию по переключению моделей и откату. Документ отсутствует; `ML_STRICT_STARTUP=False` в `docker-compose.yml` — лишь частичная реализация |
-| 4 | **Ссылка на облачное хранилище моделей** | `reports/models/MODELS_README.md` ссылается на `specs/Monitoring_Retraining.md`, которого **не существует** |

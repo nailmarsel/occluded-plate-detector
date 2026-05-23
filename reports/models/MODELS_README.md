@@ -1,8 +1,8 @@
 # Model Artifacts and Registry
 
-Веса моделей хранятся локально. Current/candidate versions, training data,
-validation metrics, drift baselines, and promotion rules are described in
-[`../../specs/Monitoring_Retraining.md`](../../specs/Monitoring_Retraining.md).
+Веса моделей хранятся локально. Текущие/потенциальные будущие версии, обучающие данные,
+метрики валидации, базовые показатели дрейфа и правила продвижения описаны в
+[`../../specs/Monitoring_Drift_Retraining.md`](../../specs/Monitoring_Drift_Retraining.md).
 
 ## Расположение
 

@@ -33,8 +33,8 @@ services:
     container_name: autobahncv-minio
     command: server /data --console-address ":9001"
     environment:
-      - MINIO_ROOT_USER=Q3AM3UQ867SPQQA43P2F
-      - MINIO_ROOT_PASSWORD=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
     expose:
       - "9000"   # S3 API
       - "9001"   # Web Console
@@ -52,6 +52,9 @@ services:
   minio-setup:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: autobahncv-minio-setup
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
     depends_on:
       minio:
         condition: service_healthy
@@ -60,7 +63,7 @@ services:
       echo 'Waiting for MinIO to be ready...' &&
       sleep 5 &&
       echo 'Configuring MinIO...' &&
-      mc alias set local http://minio:9000 Q3AM3UQ867SPQQA43P2F zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG &&
+      mc alias set local http://minio:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY &&
       mc mb local/autobahncv || true &&
       mc anonymous set download local/autobahncv &&
       echo 'MinIO setup complete!'
@@ -187,8 +190,8 @@ services:
       - ELASTICSEARCH_USERNAME=
       - ELASTICSEARCH_PASSWORD=
       - S3_ENDPOINT_URL=http://minio:9000
-      - S3_ACCESS_KEY=Q3AM3UQ867SPQQA43P2F
-      - S3_SECRET_KEY=zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=autobahncv
       - S3_REGION=us-east-1
       - S3_USE_SSL=False

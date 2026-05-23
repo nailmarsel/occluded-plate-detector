@@ -34,7 +34,7 @@ curl -X PUT "${ES_HOST}/${ES_INDEX}" \
       },
       "embedding": {
         "type": "dense_vector",
-        "dims": 512,
+        "dims": 2048,
         "index": true,
         "similarity": "cosine"
       },
@@ -56,5 +56,5 @@ curl -X PUT "${ES_HOST}/${ES_INDEX}" \
 echo ""
 echo "Elasticsearch index mapping created successfully!"
 echo "Index: ${ES_INDEX}"
-echo "Embedding dims: 512"
+echo "Embedding dims: 2048"
 echo "Similarity: cosine"
