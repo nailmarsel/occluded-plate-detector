@@ -7,7 +7,7 @@ searches Elasticsearch for the top 5 most similar vehicles.
 ## Architecture
 
 ```
-User Upload → [YOLO v8 Car Detection] → [YOLO v8 Plate Detection] → [OCR] → [ResNet-108 Embedding] → [MinIO Upload] → [Elasticsearch Search]
+User Upload → [YOLO v8 Car Detection] → [YOLO v8 Plate Detection] → [OCR] → [ResNet-50 Embedding] → [MinIO Upload] → [Elasticsearch Search]
 ```
 
 ### Storage Flow
@@ -21,7 +21,7 @@ User Upload → [YOLO v8 Car Detection] → [YOLO v8 Plate Detection] → [OCR] 
 1. **Neuron 1 (YOLO v8)**: Detects and crops the car from the input image
 2. **Neuron 2 (YOLO v8)**: Detects and crops the license plate from the car image
 3. **Neuron 3 (OCR)**: Recognizes the license plate text from the cropped plate
-4. **Neuron 4 (ResNet-108)**: Generates an embedding vector from the cropped car image
+4. **Neuron 4 (ResNet-50)**: Generates an embedding vector from the cropped car image
 
 ### Search Flow
 
@@ -61,7 +61,7 @@ location.
 
 The service monitoring, model monitoring, drift signals, feedback loop, model
 registry, and retraining policy are documented in
-[`../specs/Monitoring_Retraining.md`](../specs/Monitoring_Retraining.md).
+[`../specs/Monitoring_Drift_Retraining.md`](../specs/Monitoring_Drift_Retraining.md).
 
 ## Setup & Installation
 

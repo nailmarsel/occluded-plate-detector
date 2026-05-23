@@ -13,8 +13,8 @@ End-to-End Processing Time (от загрузки изображения до в
 - P99: < 2000 мс
 Latency по ключевым компонентам (P95):
 - Vehicle & Plate Detection (YOLOv8): < 300 мс
-- OCR Processing (Tesseract): < 200 мс
-- Similarity Search (ResNet-108 + ElasticSearch): < 700 мс
+- OCR Processing (CNN+BiLSTM+CTC): < 200 мс
+- Similarity Search (ResNet-50 + ElasticSearch): < 700 мс
 
 ---
 
@@ -29,10 +29,10 @@ API Uptime: ≥ 99.5%
 ### Детекция и OCR:
 - Vehicle Detector (YOLOv8): mAP50 ≥ 0.92
 - License Plate Localization (YOLOv8): mAP50 ≥ 0.90
-- OCR (Tesseract): Full Plate Accuracy ≥ 0.95
+- OCR (CNN+BiLSTM+CTC): Full Plate Accuracy ≥ 0.95
 
 ### Поиск похожих автомобилей:
-- Top-5 Accuracy (ResNet-108): ≥ 0.96
+- Top-5 Accuracy (ResNet-50): ≥ 0.96
 - Top-1 Accuracy для полных номеров: ≥ 0.85
 - Top-5 Accuracy для перекрытых номеров: ≥ 0.80
 

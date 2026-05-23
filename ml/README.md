@@ -51,4 +51,4 @@ cd ml/car_embedder && make train EPOCHS=1 BATCH=8
 
 Monitoring, drift checks, feedback collection, registry fields, and retraining
 rules for all four models are described in
-[`../specs/Monitoring_Retraining.md`](../specs/Monitoring_Retraining.md).
+[`../specs/Monitoring_Drift_Retraining.md`](../specs/Monitoring_Drift_Retraining.md).
