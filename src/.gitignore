@@ -51,7 +51,6 @@ logs/
 *.pt
 *.onnx
 *.pb
-/models/
 
 # Testing
 .pytest_cache/
