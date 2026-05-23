@@ -178,7 +178,7 @@ API и frontend готовы, ML pipeline интегрирован, а вокр�
    Превратить исправления операторов из feedback endpoint в размеченные примеры
    для будущего улучшения OCR, detector и ranking.
 
-## Summary
+## Итоги
 
 AutobahnCV имеет рабочий MVP и сильную инженерную среду вокруг него: API,
 frontend, container stack, monitoring, logging, documentation и feedback
