@@ -1,0 +1,16 @@
+{
+  "detection": {
+    "double_annotated": 256,
+    "mean_iou": 0.8806,
+    "median_iou": 0.902,
+    "pct_above_0.85": 79.7,
+    "disputed": 52
+  },
+  "ocr": {
+    "double_annotated": 455,
+    "exact_match_agreement": 97.6,
+    "char_level_agreement": 99.73,
+    "cohens_kappa": 0.997,
+    "disputed": 11
+  }
+}

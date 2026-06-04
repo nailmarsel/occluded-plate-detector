@@ -1,0 +1,342 @@
+[
+  {
+    "id": 1,
+    "image": "images/ocr_00001.png",
+    "transcription": "K917CK573",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 6.2
+  },
+  {
+    "id": 2,
+    "image": "images/ocr_00002.png",
+    "transcription": "O610KX160",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 7.9
+  },
+  {
+    "id": 3,
+    "image": "images/ocr_00003.png",
+    "transcription": "O501YA187",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 5.5
+  },
+  {
+    "id": 4,
+    "image": "images/ocr_00004.png",
+    "transcription": "C047TC27",
+    "flags": [
+      "glare"
+    ],
+    "annotator": "nail",
+    "lead_time": 7.6
+  },
+  {
+    "id": 5,
+    "image": "images/ocr_00005.png",
+    "transcription": "P809BP379",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 4.7
+  },
+  {
+    "id": 6,
+    "image": "images/ocr_00006.png",
+    "transcription": "B333CT17",
+    "flags": [
+      "dirty_plate"
+    ],
+    "annotator": "nail",
+    "lead_time": 7.1
+  },
+  {
+    "id": 7,
+    "image": "images/ocr_00007.png",
+    "transcription": "O184AA95",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 7.1
+  },
+  {
+    "id": 8,
+    "image": "images/ocr_00008.png",
+    "transcription": "X457CB895",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 8.8
+  },
+  {
+    "id": 9,
+    "image": "images/ocr_00009.png",
+    "transcription": "C114AB45",
+    "flags": [
+      "glare"
+    ],
+    "annotator": "maksim",
+    "lead_time": 3.5
+  },
+  {
+    "id": 10,
+    "image": "images/ocr_00010.png",
+    "transcription": "Y700CY87",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 4.5
+  },
+  {
+    "id": 11,
+    "image": "images/ocr_00011.png",
+    "transcription": "X290YH92",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 6.9
+  },
+  {
+    "id": 12,
+    "image": "images/ocr_00012.png",
+    "transcription": "Y309AB75",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 7.7
+  },
+  {
+    "id": 13,
+    "image": "images/ocr_00013.png",
+    "transcription": "A327AC64",
+    "flags": [
+      "ambiguous"
+    ],
+    "annotator": "maksim",
+    "lead_time": 6.7
+  },
+  {
+    "id": 14,
+    "image": "images/ocr_00014.png",
+    "transcription": "M708TB477",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 4.4
+  },
+  {
+    "id": 15,
+    "image": "images/ocr_00015.png",
+    "transcription": "T175MX563",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 6.8
+  },
+  {
+    "id": 16,
+    "image": "images/ocr_00016.png",
+    "transcription": "P420EB892",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 8.6
+  },
+  {
+    "id": 17,
+    "image": "images/ocr_00017.png",
+    "transcription": "A192PA829",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 3.7
+  },
+  {
+    "id": 18,
+    "image": "images/ocr_00018.png",
+    "transcription": "B907YE088",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 5.9
+  },
+  {
+    "id": 19,
+    "image": "images/ocr_00019.png",
+    "transcription": "C415AO746",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 4.2
+  },
+  {
+    "id": 20,
+    "image": "images/ocr_00020.png",
+    "transcription": "E266OX473",
+    "flags": [
+      "partially_occluded"
+    ],
+    "annotator": "nail",
+    "lead_time": 6.8
+  },
+  {
+    "id": 21,
+    "image": "images/ocr_00021.png",
+    "transcription": "C640MO633",
+    "flags": [
+      "glare"
+    ],
+    "annotator": "nail",
+    "lead_time": 8.6
+  },
+  {
+    "id": 22,
+    "image": "images/ocr_00022.png",
+    "transcription": "B881TA166",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 4.8
+  },
+  {
+    "id": 23,
+    "image": "images/ocr_00023.png",
+    "transcription": "K655HP884",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 8.3
+  },
+  {
+    "id": 24,
+    "image": "images/ocr_00024.png",
+    "transcription": "E367KA29",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 5.4
+  },
+  {
+    "id": 25,
+    "image": "images/ocr_00025.png",
+    "transcription": "X712CC044",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 5.7
+  },
+  {
+    "id": 26,
+    "image": "images/ocr_00026.png",
+    "transcription": "E506OM830",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 4.1
+  },
+  {
+    "id": 27,
+    "image": "images/ocr_00027.png",
+    "transcription": "O495HH162",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 3.6
+  },
+  {
+    "id": 28,
+    "image": "images/ocr_00028.png",
+    "transcription": "B338XE76",
+    "flags": [
+      "dirty_plate"
+    ],
+    "annotator": "nail",
+    "lead_time": 5.2
+  },
+  {
+    "id": 29,
+    "image": "images/ocr_00029.png",
+    "transcription": "P236BC452",
+    "flags": [
+      "glare"
+    ],
+    "annotator": "nail",
+    "lead_time": 7.5
+  },
+  {
+    "id": 30,
+    "image": "images/ocr_00030.png",
+    "transcription": "Y052YO20",
+    "flags": [
+      "ambiguous"
+    ],
+    "annotator": "maksim",
+    "lead_time": 5.3
+  },
+  {
+    "id": 31,
+    "image": "images/ocr_00031.png",
+    "transcription": "E119OE541",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 3.7
+  },
+  {
+    "id": 32,
+    "image": "images/ocr_00032.png",
+    "transcription": "E925TX83",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 7.4
+  },
+  {
+    "id": 33,
+    "image": "images/ocr_00033.png",
+    "transcription": "A624AT68",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 4.0
+  },
+  {
+    "id": 34,
+    "image": "images/ocr_00034.png",
+    "transcription": "E842TK98",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 8.0
+  },
+  {
+    "id": 35,
+    "image": "images/ocr_00035.png",
+    "transcription": "P365BE310",
+    "flags": [],
+    "annotator": "maksim",
+    "lead_time": 6.0
+  },
+  {
+    "id": 36,
+    "image": "images/ocr_00036.png",
+    "transcription": "M321BP888",
+    "flags": [
+      "ambiguous"
+    ],
+    "annotator": "maksim",
+    "lead_time": 5.9
+  },
+  {
+    "id": 37,
+    "image": "images/ocr_00037.png",
+    "transcription": "E310YH751",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 7.8
+  },
+  {
+    "id": 38,
+    "image": "images/ocr_00038.png",
+    "transcription": "Y928AT43",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 5.0
+  },
+  {
+    "id": 39,
+    "image": "images/ocr_00039.png",
+    "transcription": "O852XA80",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 3.5
+  },
+  {
+    "id": 40,
+    "image": "images/ocr_00040.png",
+    "transcription": "Y597TX280",
+    "flags": [],
+    "annotator": "nail",
+    "lead_time": 5.0
+  }
+]

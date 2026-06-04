@@ -1,0 +1,64 @@
+task,type,metric,value,annotator_a,annotator_b,reason,final_decision
+det_00000,detection,IoU,0.85,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00012,detection,IoU,0.848,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00013,detection,IoU,0.657,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00015,detection,IoU,0.336,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00018,detection,IoU,0.585,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00022,detection,IoU,0.815,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00023,detection,IoU,0.557,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00027,detection,IoU,0.803,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00032,detection,IoU,0.811,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00036,detection,IoU,0.777,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00041,detection,IoU,0.516,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00042,detection,IoU,0.83,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00051,detection,IoU,0.827,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00054,detection,IoU,0.625,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00069,detection,IoU,0.83,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00070,detection,IoU,0.85,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00078,detection,IoU,0.834,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00087,detection,IoU,0.534,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00088,detection,IoU,0.847,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00096,detection,IoU,0.831,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00099,detection,IoU,0.829,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00107,detection,IoU,0.599,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00112,detection,IoU,0.816,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00113,detection,IoU,0.85,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00117,detection,IoU,0.779,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00119,detection,IoU,0.844,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00120,detection,IoU,0.826,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00130,detection,IoU,0.811,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00131,detection,IoU,0.839,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00136,detection,IoU,0.595,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00138,detection,IoU,0.715,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00146,detection,IoU,0.825,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00147,detection,IoU,0.808,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00151,detection,IoU,0.476,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00155,detection,IoU,0.632,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00158,detection,IoU,0.835,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00159,detection,IoU,0.807,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00171,detection,IoU,0.836,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00179,detection,IoU,0.835,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00186,detection,IoU,0.82,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00194,detection,IoU,0.82,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00195,detection,IoU,0.822,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00201,detection,IoU,0.794,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00208,detection,IoU,0.709,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00210,detection,IoU,0.802,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00215,detection,IoU,0.68,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00216,detection,IoU,0.827,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00221,detection,IoU,0.821,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00228,detection,IoU,0.441,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00234,detection,IoU,0.787,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00235,detection,IoU,0.785,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+det_00240,detection,IoU,0.849,nail,maksim,IoU below 0.85 threshold,re-labeled by arbiter (Nail Siraev)
+ocr_00023,ocr,exact_match,0,E815OO819,E8150O819,transcription mismatch (similar-char confusion),arbiter confirmed: E815OO819
+ocr_00077,ocr,exact_match,0,E602HE013,E602HE0T3,transcription mismatch (similar-char confusion),arbiter confirmed: E602HE013
+ocr_00187,ocr,exact_match,0,T980EA700,T980EA70O,transcription mismatch (similar-char confusion),arbiter confirmed: T980EA700
+ocr_00269,ocr,exact_match,0,O808HA839,0808HA839,transcription mismatch (similar-char confusion),arbiter confirmed: O808HA839
+ocr_00283,ocr,exact_match,0,C512YC928,C512YC92B,transcription mismatch (similar-char confusion),arbiter confirmed: C512YC928
+ocr_00284,ocr,exact_match,0,X024PP113,XO24PP113,transcription mismatch (similar-char confusion),arbiter confirmed: X024PP113
+ocr_00302,ocr,exact_match,0,A573KC896,A573KCB96,transcription mismatch (similar-char confusion),arbiter confirmed: A573KC896
+ocr_00345,ocr,exact_match,0,P539BE324,P5398E324,transcription mismatch (similar-char confusion),arbiter confirmed: P539BE324
+ocr_00375,ocr,exact_match,0,A653AB969,A653A8969,transcription mismatch (similar-char confusion),arbiter confirmed: A653AB969
+ocr_00402,ocr,exact_match,0,O012TH893,O0121H893,transcription mismatch (similar-char confusion),arbiter confirmed: O012TH893
+ocr_00439,ocr,exact_match,0,B026AB414,8026AB414,transcription mismatch (similar-char confusion),arbiter confirmed: B026AB414

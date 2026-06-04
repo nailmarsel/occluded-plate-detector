@@ -1,0 +1,22 @@
+<View>
+  <Header value="Распознавание текста номерного знака"/>
+
+  <Image name="image" value="$image" zoom="true" zoomControl="true"/>
+
+  <Header value="Текст номера (алфавит: 1234567890ABEKMHOPCTYX)"/>
+  <TextArea name="transcription" toName="image"
+            placeholder="Например: A129XY196"
+            rows="1" maxSubmissions="1" editable="true" required="true"/>
+
+  <Header value="Флаги"/>
+  <Choices name="flags" toName="image" choice="multiple" showInLine="true">
+    <Choice value="ambiguous"/>
+    <Choice value="dirty_plate"/>
+    <Choice value="glare"/>
+    <Choice value="partially_occluded"/>
+  </Choices>
+
+  <TextArea name="comment" toName="image"
+            placeholder="Комментарий для арбитража"
+            rows="2" maxSubmissions="1" editable="true"/>
+</View>
