@@ -1,0 +1,27 @@
+<View>
+  <Header value="Разметка номерного знака (bounding box)"/>
+
+  <Image name="image" value="$image" zoom="true" zoomControl="true"/>
+
+  <RectangleLabels name="bbox" toName="image" strokeWidth="2">
+    <Label value="plate" background="#FF6B00"/>
+  </RectangleLabels>
+
+  <Header value="Степень перекрытия номера"/>
+  <Choices name="occlusion" toName="image" choice="single" showInLine="true">
+    <Choice value="none"/>
+    <Choice value="partial"/>
+    <Choice value="heavy"/>
+  </Choices>
+
+  <Header value="Флаги контроля качества"/>
+  <Choices name="flags" toName="image" choice="multiple" showInLine="true">
+    <Choice value="ambiguous"/>
+    <Choice value="no_plate"/>
+    <Choice value="multiple_plates"/>
+  </Choices>
+
+  <TextArea name="comment" toName="image"
+            placeholder="Комментарий для reviewer/arbiter (необязательно)"
+            rows="2" maxSubmissions="1" editable="true"/>
+</View>
