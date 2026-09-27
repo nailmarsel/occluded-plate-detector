@@ -51,9 +51,19 @@ class Settings(BaseSettings):
     NEURON4_RESNET_MODEL: str = "resnet50"
     NEURON4_EMBEDDING_DIM: int = 2048
 
+    # Neuron 5: CLIP - joint text/image embedding for search by description
+    TEXT_SEARCH_ENABLED: bool = True
+    NEURON5_CLIP_IMAGE_MODEL: str = "clip-ViT-B-32"
+    NEURON5_CLIP_TEXT_MODEL: str = (
+        "sentence-transformers/clip-ViT-B-32-multilingual-v1"
+    )
+    NEURON5_CLIP_EMBEDDING_DIM: int = 512
+
     # Search
     SEARCH_TOP_K: int = 5
     EMBEDDING_SIMILARITY_THRESHOLD: float = 0.7
+    # Share of the text (CLIP) score when a photo search also has a description.
+    HYBRID_DESCRIPTION_WEIGHT: float = 0.5
 
 
 settings = Settings()

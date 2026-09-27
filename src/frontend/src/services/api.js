@@ -1,9 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-export async function searchSimilarCars(imageFile, plateQuery = '') {
+export async function searchSimilarCars(imageFile, plateQuery = '', description = '') {
     const formData = new FormData();
     formData.append('image', imageFile);
     if (plateQuery.trim()) formData.append('plate_query', plateQuery.trim());
+    if (description.trim()) formData.append('description', description.trim());
 
     const response = await fetch(`${API_BASE}/api/v1/search`, {
         method: 'POST',
@@ -13,6 +14,25 @@ export async function searchSimilarCars(imageFile, plateQuery = '') {
     if (!response.ok) {
         const error = await response.json().catch(() => ({message: 'Search failed'}));
         throw new Error(error.detail?.message || error.message || 'Search failed');
+    }
+
+    return response.json();
+}
+
+export async function searchByDescription(description, plateQuery = '') {
+    const response = await fetch(`${API_BASE}/api/v1/search/text`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            description: description.trim(),
+            plate_query: plateQuery.trim(),
+        }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({message: 'Search failed'}));
+        const detail = Array.isArray(error.detail) ? error.detail[0]?.msg : error.detail?.message;
+        throw new Error(detail || error.message || 'Search failed');
     }
 
     return response.json();

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
 from app.core.logging import logger
@@ -15,7 +15,7 @@ router = APIRouter(tags=["health"])
     summary="Health check",
     description="Check the health status of the application and its dependencies."
 )
-async def health_check() -> HealthResponse:
+async def health_check(request: Request) -> HealthResponse:
     """Health check endpoint."""
     try:
         # Check Elasticsearch
@@ -31,6 +31,13 @@ async def health_check() -> HealthResponse:
             "ocr": "initialized",
             "embedding": "initialized"
         }
+        pipeline = getattr(request.app.state, "processing_pipeline", None)
+        if pipeline is not None:
+            neurons_status["text_search"] = (
+                "initialized"
+                if getattr(pipeline, "text_search_available", False)
+                else "unavailable"
+            )
 
         overall_status = "healthy" if (es_health and s3_health) else "degraded"
 

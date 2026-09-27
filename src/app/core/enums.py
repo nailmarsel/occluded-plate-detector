@@ -20,3 +20,13 @@ class ErrorCode(StrEnum):
     EMBEDDING_FAILED = "EMBEDDING_FAILED"
     ELASTICSEARCH_ERROR = "ELASTICSEARCH_ERROR"
     NEURON_ERROR = "NEURON_ERROR"
+    INVALID_QUERY = "INVALID_QUERY"
+    TEXT_SEARCH_UNAVAILABLE = "TEXT_SEARCH_UNAVAILABLE"
+
+
+class SearchMode(StrEnum):
+    """How a search request was resolved."""
+    IMAGE = "image"
+    IMAGE_AND_TEXT = "image+text"
+    TEXT = "text"
+    PLATE = "plate"

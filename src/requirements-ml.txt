@@ -4,3 +4,5 @@ ultralytics>=8.3.0
 torch>=2.1.2
 torchvision>=0.16.2
 easyocr>=1.7.1
+# CLIP image + multilingual text encoders for search by description
+sentence-transformers>=2.7.0

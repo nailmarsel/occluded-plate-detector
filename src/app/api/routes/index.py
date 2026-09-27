@@ -3,14 +3,15 @@ import uuid
 import zipfile
 from pathlib import Path, PurePosixPath
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
+from PIL import Image
 from pydantic import BaseModel
 
 from app.api.dependencies import get_processing_pipeline
 from app.core.config import settings
 from app.core.enums import ErrorCode
 from app.core.logging import logger
-from app.models.schemas import ErrorResponse, IndexResponse
+from app.models.schemas import ClipBackfillResponse, ErrorResponse, IndexResponse
 from app.monitoring.metrics import (
     confidence_car,
     confidence_ocr,
@@ -123,7 +124,8 @@ async def _process_and_index_single_image(
         car_id=car_id,
         plate_number=plate_number,
         embedding=embedding,
-        s3_key=s3_key
+        s3_key=s3_key,
+        clip_embedding=result.get("clip_embedding"),
     )
 
     if not success:
@@ -474,4 +476,75 @@ async def batch_index_zip(
         succeeded=succeeded,
         failed=failed,
         results=results,
+    )
+
+
+@router.post(
+    "/clip/backfill",
+    response_model=ClipBackfillResponse,
+    responses={503: {"model": ErrorResponse}},
+    summary="Compute text-search embeddings for already indexed cars",
+    description="""
+    Cars indexed before search-by-description was enabled have no
+    `clip_embedding` and cannot be found by a text description. This endpoint
+    downloads their stored car crops from S3, computes CLIP image embeddings
+    and updates the Elasticsearch documents. Call it repeatedly until
+    `remaining` is 0.
+    """,
+)
+async def backfill_clip_embeddings(
+    request: Request,
+    limit: int = Query(200, ge=1, le=MAX_BATCH_FILES),
+) -> ClipBackfillResponse:
+    pipeline = get_processing_pipeline(request)
+    if not pipeline.text_search_available:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error_code": ErrorCode.TEXT_SEARCH_UNAVAILABLE,
+                "message": "Text search model is not loaded.",
+            },
+        )
+
+    await es_client.ensure_text_search_mapping()
+
+    processed = updated = failed = 0
+    failed_ids: list[str] = []
+    page_size = min(limit, 50)
+
+    while processed < limit:
+        cars, _ = await es_client.get_cars_missing_clip_embedding(
+            size=min(page_size, limit - processed), exclude_ids=failed_ids
+        )
+        if not cars:
+            break
+
+        for car in cars:
+            processed += 1
+            doc_id = car["_id"]
+            try:
+                s3_key = car.get("s3_key")
+                image_data = await s3_client.download_image(s3_key) if s3_key else None
+                if not image_data:
+                    raise RuntimeError(f"stored image not found: {s3_key}")
+                image = Image.open(io.BytesIO(image_data)).convert("RGB")
+                clip_embedding = await pipeline.encode_car_image(image)
+                if not clip_embedding:
+                    raise RuntimeError("CLIP embedding failed")
+                await es_client.update_clip_embedding(doc_id, clip_embedding)
+                updated += 1
+            except Exception as exc:
+                logger.warning("CLIP backfill failed for %s: %s", doc_id, exc)
+                failed_ids.append(doc_id)
+                failed += 1
+
+    _, remaining = await es_client.get_cars_missing_clip_embedding(
+        size=0, exclude_ids=None
+    )
+    logger.info(
+        "CLIP backfill: processed=%d updated=%d failed=%d remaining=%d",
+        processed, updated, failed, remaining,
+    )
+    return ClipBackfillResponse(
+        processed=processed, updated=updated, failed=failed, remaining=remaining
     )

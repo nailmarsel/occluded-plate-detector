@@ -88,6 +88,20 @@ services:
         if curl -fs 'http://elasticsearch:9200/cars/_mapping' \
           | grep -q '"dims":2048'; then
           echo 'Elasticsearch index mapping is already current.'
+          echo 'Ensuring clip_embedding field for text search...'
+          curl -fs -X PUT 'http://elasticsearch:9200/cars/_mapping' \
+            -H 'Content-Type: application/json' \
+            -d '{
+            "properties": {
+              "clip_embedding": {
+                "type": "dense_vector",
+                "dims": 512,
+                "index": true,
+                "similarity": "cosine"
+              }
+            }
+          }'
+          echo ''
         else
           echo 'Recreating Elasticsearch index mapping...'
           curl -s -X DELETE 'http://elasticsearch:9200/cars' || true
@@ -105,6 +119,12 @@ services:
                 "embedding": {
                   "type": "dense_vector",
                   "dims": 2048,
+                  "index": true,
+                  "similarity": "cosine"
+                },
+                "clip_embedding": {
+                  "type": "dense_vector",
+                  "dims": 512,
                   "index": true,
                   "similarity": "cosine"
                 },
@@ -202,6 +222,10 @@ services:
       - NEURON3_CONFIDENCE_THRESHOLD=0.45
       - NEURON4_RESNET_MODEL=/app/models/car_embedder.pt
       - NEURON4_EMBEDDING_DIM=2048
+      - TEXT_SEARCH_ENABLED=True
+      - NEURON5_CLIP_IMAGE_MODEL=clip-ViT-B-32
+      - NEURON5_CLIP_TEXT_MODEL=sentence-transformers/clip-ViT-B-32-multilingual-v1
+      - NEURON5_CLIP_EMBEDDING_DIM=512
     volumes:
       - ./models:/app/models:ro
     depends_on:

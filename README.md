@@ -29,6 +29,7 @@ dataset and returns the most likely full license plates.
 | Car & plate detection | YOLOv8 (Ultralytics) |
 | Plate OCR | Custom CNN + BiLSTM + CTC recognizer (`ml/plate_ocr`); EasyOCR used as runtime fallback |
 | Car embedding | ResNet-50 (2048-dim feature vector) |
+| Search by description | CLIP ViT-B/32 + multilingual text encoder (sentence-transformers, 512-dim) |
 | Deep learning framework | PyTorch |
 | Backend | FastAPI |
 | Frontend | React 18 + Vite |
@@ -64,6 +65,9 @@ The system uses a modular pipeline of four ML "neurons" behind a FastAPI layer:
   hidden characters.
 - **Embedding Module** — ResNet-50 produces a 2048-dim car embedding.
 - **Similarity Search Module** — Elasticsearch kNN search over embeddings.
+- **Search by Description** — multilingual CLIP (`clip-ViT-B-32` + `clip-ViT-B-32-multilingual-v1`)
+  finds cars by a text description such as `белая Toyota Camry, номер А1**ВС77`,
+  with or without a photo (`POST /api/v1/search/text`).
 - **API Layer** — exposes search, indexing, image retrieval and feedback endpoints.
 
 ## 5. Observability & Monitoring
@@ -107,6 +111,15 @@ Elasticsearch). Details, dashboards and the retraining policy are documented in
 6. Elasticsearch performs kNN similarity search, optionally filtered by the plate fragment.
 7. The API returns the top-5 candidate cars with similarity scores and stored images.
 8. The operator confirms / rejects / corrects the result via `POST /api/v1/feedback`.
+
+**Search by description** (no photo):
+
+1. Client sends `POST /api/v1/search/text` with `{"description": "белая Toyota Camry, номер А1**ВС77"}`.
+2. The plate fragment (`A1??BC77`) is extracted and becomes a wildcard filter.
+3. The rest of the text is embedded with the multilingual CLIP text encoder.
+4. Elasticsearch runs kNN over the CLIP image embeddings stored at indexing time.
+5. The API returns the top-5 candidates. The same `description` field can be
+   added to `POST /api/v1/search` to rank by photo and description together.
 
 A diagram of the inference pipeline is in
 [`HW/Lekciya-6/INFERENCE_PIPELINE.md`](HW/Lekciya-6/INFERENCE_PIPELINE.md).
@@ -173,6 +186,7 @@ uvicorn app.main:app --reload --port 8000
 | Детекция авто и номера | YOLOv8 (Ultralytics) |
 | OCR номера | Собственный распознаватель CNN + BiLSTM + CTC (`ml/plate_ocr`); EasyOCR — runtime-fallback |
 | Эмбеддинг авто | ResNet-50 (вектор размерности 2048) |
+| Поиск по описанию | CLIP ViT-B/32 + мультиязычный текстовый энкодер (sentence-transformers, 512) |
 | Фреймворк глубокого обучения | PyTorch |
 | Backend | FastAPI |
 | Frontend | React 18 + Vite |
@@ -202,7 +216,10 @@ uvicorn app.main:app --reload --port 8000
 модуль загрузки изображения, детекция автомобиля (YOLOv8), детекция номера
 (YOLOv8), OCR номера, ручной partial-plate query с wildcard `*`/`?`,
 эмбеддинг автомобиля (ResNet-50), поиск похожих (kNN в Elasticsearch) и
-API-слой.
+API-слой. Дополнительно есть **поиск по текстовому описанию** (`POST /api/v1/search/text`):
+мультиязычный CLIP сопоставляет описание вроде «белая Toyota Camry, номер А1**ВС77»
+с фотографиями из базы, а фрагмент номера из описания используется как фильтр.
+Описание можно добавить и к поиску по фото.
 
 ## 5. Наблюдаемость и мониторинг
 

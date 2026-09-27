@@ -4,6 +4,9 @@ A FastAPI-based application that allows users to search for similar cars by uplo
 license plate. The system uses neural networks for car detection, plate recognition, and embedding generation, then
 searches Elasticsearch for the top 5 most similar vehicles.
 
+Cars can also be found **without a photo, by a text description** in Russian or English
+(`белая Toyota Camry седан, номер А1**ВС77`), or by a photo **plus** a description.
+
 ## Architecture
 
 ```
@@ -22,12 +25,25 @@ User Upload → [YOLO v8 Car Detection] → [YOLO v8 Plate Detection] → [OCR] 
 2. **Neuron 2 (YOLO v8)**: Detects and crops the license plate from the car image
 3. **Neuron 3 (OCR)**: Recognizes the license plate text from the cropped plate
 4. **Neuron 4 (ResNet-50)**: Generates an embedding vector from the cropped car image
+5. **Neuron 5 (CLIP, optional)**: Encodes the cropped car image (`clip-ViT-B-32`) and operator descriptions
+   (`clip-ViT-B-32-multilingual-v1`, 50+ languages incl. Russian) into one 512-dim space for search by text.
+   If the models cannot be loaded, the app starts without text search and photo search is unaffected.
 
 ### Search Flow
 
 1. Filter Elasticsearch documents by partial plate number match
 2. Rank results by embedding similarity (cosine similarity)
 3. Return top 5 most similar cars
+
+### Search-by-Description Flow
+
+1. The description is split into a **plate fragment** and a **visual part**:
+   `белая Toyota Camry, номер А1**ВС77` → plate `A1??BC77`, text `белая Toyota Camry`.
+   A plate is taken after words like `номер`, `госномер`, `г/н`, `plate`, or from a token shaped like a Russian plate
+   (`А123ВС77`, `А 123 ВС 77`, `А1**ВС`). Short model names (`X5`, `E200`) and years are not treated as plates.
+2. The visual part is embedded with the CLIP text encoder.
+3. Elasticsearch runs kNN over `clip_embedding`, filtered by the plate wildcard if one was given.
+4. A description with only a plate fragment runs a plate-only search.
 
 ## Project Structure
 
@@ -320,6 +336,70 @@ normalizes `АВЕКМНОРСТУХ` to `ABEKMHOPCTYX` before searching.
 }
 ```
 
+Optional `description` form field (e.g. `белый седан, литые диски`) combines the photo with a text description:
+Elasticsearch sums the photo-similarity score and the description score
+(weights set by `HYBRID_DESCRIPTION_WEIGHT`, default `0.5`). A plate fragment in the description is used when
+`plate_query` is empty. The response then has `"search_mode": "image+text"`.
+
+### 1a. Search by Text Description
+
+**POST** `/api/v1/search/text`
+
+Find cars without a photo, by a free-text description.
+
+**Request:** JSON
+
+```json
+{
+  "description": "белая Toyota Camry седан, номер А1**ВС77",
+  "plate_query": ""
+}
+```
+
+- `description` (required, up to 500 chars): color, make/model, body type, details; may contain a plate fragment.
+  Use `*`, `?` or `_` for hidden plate characters.
+- `plate_query` (optional): overrides a plate found in the description.
+
+**Response:** same shape as `/search`, plus:
+
+```json
+{
+  "results": [
+    {
+      "car_id": "car_123",
+      "similarity_score": 0.63,
+      "plate_number": "A123BC77",
+      "image_url": "/api/v1/images/cars/car_123.jpg"
+    }
+  ],
+  "detected_plate": "",
+  "plate_query": "A1??BC77",
+  "total_found": 1,
+  "search_mode": "text",
+  "description": "белая Toyota Camry седан, номер А1**ВС77",
+  "text_query": "белая Toyota Camry седан"
+}
+```
+
+`search_mode` is `text` (CLIP ranking, optionally plate-filtered) or `plate` (description had only a plate fragment).
+CLIP text-to-image scores are on a different scale than photo-to-photo scores (typically ~0.6–0.7), so compare them
+only within one response.
+
+Errors: `400 INVALID_QUERY` (neither a visual description nor a plate), `503 TEXT_SEARCH_UNAVAILABLE`
+(CLIP models not loaded).
+
+### 1b. Backfill Text-Search Embeddings
+
+**POST** `/api/v1/index/clip/backfill?limit=200`
+
+Cars indexed before text search was enabled have no `clip_embedding` and are invisible to `/search/text`.
+This endpoint downloads their stored car crops from MinIO, computes CLIP embeddings and updates the documents.
+Repeat until `remaining` is `0`. New cars get `clip_embedding` automatically during `/index`.
+
+```json
+{ "processed": 200, "updated": 198, "failed": 2, "remaining": 350 }
+```
+
 ### 2. Index a Single Car
 
 **POST** `/api/v1/index`
@@ -441,6 +521,22 @@ curl -X POST "http://localhost:8000/api/v1/search" \
   -F "plate_query=A8**AA977"
 ```
 
+### Search by description (curl)
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/search/text" \
+  -H "Content-Type: application/json" \
+  -d '{"description": "белая Toyota Camry седан, номер А1**ВС77"}'
+```
+
+Photo plus description:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/search" \
+  -F "image=@/path/to/car_photo.jpg" \
+  -F "description=белый седан, литые диски"
+```
+
 ### Index a single car (curl)
 
 ```bash
@@ -516,6 +612,12 @@ The Elasticsearch index must have the following mapping:
         "index": true,
         "similarity": "cosine"
       },
+      "clip_embedding": {
+        "type": "dense_vector",
+        "dims": 512,
+        "index": true,
+        "similarity": "cosine"
+      },
       "s3_key": {
         "type": "keyword"
       },
@@ -532,6 +634,9 @@ The Elasticsearch index must have the following mapping:
 
 Run `scripts/setup_elasticsearch.sh` manually if you're not using Docker Compose, or run the `es-setup` job via
 `docker compose up es-setup`. Adjust `dims` if your embedding dimension differs from 2048.
+
+`clip_embedding` is added to an existing index without data loss: the `es-setup` job and the app on startup both
+issue a `PUT /cars/_mapping` for it. Then call `POST /api/v1/index/clip/backfill` to fill it for existing cars.
 
 ## CI
 

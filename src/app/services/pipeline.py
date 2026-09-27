@@ -11,6 +11,7 @@ from app.core.logging import logger
 from app.neurons.car_plate_detection import CarDetectionNeuron, PlateDetectionNeuron
 from app.neurons.embedding import EmbeddingNeuron
 from app.neurons.ocr import OCRNeuron
+from app.neurons.text_image_embedding import TextImageEmbeddingNeuron
 
 PLATE_CHARS_PATTERN = re.compile(r"[^A-Z0-9]")
 PLATE_QUERY_CHARS_PATTERN = re.compile(r"[^A-Z0-9*?]")
@@ -67,6 +68,7 @@ class ImageProcessingPipeline:
     2. Detect and crop license plate (YOLO v8)
     3. Recognize plate number (OCR)
     4. Generate embedding (ResNet-108)
+    5. (optional) CLIP image embedding for search by text description
     """
 
     def __init__(self):
@@ -74,6 +76,7 @@ class ImageProcessingPipeline:
         self.plate_detector: PlateDetectionNeuron | None = None
         self.ocr: OCRNeuron | None = None
         self.embedding_model: EmbeddingNeuron | None = None
+        self.text_image_model: TextImageEmbeddingNeuron | None = None
         self.initialization_errors: dict[str, str] = {}
 
     def _ensure_initialized(self) -> None:
@@ -116,6 +119,18 @@ class ImageProcessingPipeline:
         await self._initialize_neuron("ocr", self.ocr)
         await self._initialize_neuron("embedding_model", self.embedding_model)
 
+        if settings.TEXT_SEARCH_ENABLED:
+            self.text_image_model = TextImageEmbeddingNeuron(
+                image_model_name=settings.NEURON5_CLIP_IMAGE_MODEL,
+                text_model_name=settings.NEURON5_CLIP_TEXT_MODEL,
+                embedding_dim=settings.NEURON5_CLIP_EMBEDDING_DIM,
+            )
+            await self._initialize_neuron("text_image_model", self.text_image_model)
+        else:
+            self.initialization_errors["text_image_model"] = (
+                "disabled by TEXT_SEARCH_ENABLED=False"
+            )
+
         logger.info("Image processing pipeline initialized successfully")
 
     async def _initialize_neuron(self, name: str, neuron) -> None:
@@ -133,11 +148,40 @@ class ImageProcessingPipeline:
                 f"{name} is not available: {self.initialization_errors[name]}"
             )
 
+    @property
+    def text_search_available(self) -> bool:
+        return (
+            self.text_image_model is not None
+            and "text_image_model" not in self.initialization_errors
+        )
+
+    async def encode_text(self, text: str) -> list[float]:
+        """CLIP text embedding of a free-text car description."""
+        if not self.text_search_available:
+            reason = self.initialization_errors.get(
+                "text_image_model", "not initialized"
+            )
+            raise RuntimeError(f"Text search is not available: {reason}")
+        assert self.text_image_model is not None
+        return await self.text_image_model.encode_text(text)
+
+    async def encode_car_image(self, image: Image.Image) -> list[float] | None:
+        """CLIP image embedding of a car crop; None if text search is off."""
+        if not self.text_search_available:
+            return None
+        assert self.text_image_model is not None
+        try:
+            return await self.text_image_model.encode_image(image)
+        except Exception as exc:
+            logger.warning("CLIP image embedding failed: %s", exc)
+            return None
+
     async def process_for_search(
         self,
         image_data: bytes,
         plate_number: str | None = None,
         allow_missing_plate: bool = True,
+        compute_clip_embedding: bool = False,
     ) -> dict[str, Any]:
         """
         Process input image for search: extract plate number and generate embedding.
@@ -217,9 +261,17 @@ class ImageProcessingPipeline:
             embedding = embedding_result["embedding"]
             logger.info(f"Embedding generated: dim={len(embedding)}")
 
+            # Step 5 (optional): CLIP embedding for search by description
+            clip_embedding = (
+                await self.encode_car_image(cropped_car)
+                if compute_clip_embedding
+                else None
+            )
+
             return {
                 "plate_number": plate_number,
                 "embedding": embedding,
+                "clip_embedding": clip_embedding,
                 "cropped_car_image": cropped_car,
                 "cropped_plate_image": cropped_plate,
                 "car_bbox": car_result["bbox"],
@@ -250,4 +302,5 @@ class ImageProcessingPipeline:
             image_data,
             plate_number=plate_number,
             allow_missing_plate=False,
+            compute_clip_embedding=True,
         )

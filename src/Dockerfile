@@ -35,6 +35,11 @@ resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
 torch.save(resnet.state_dict(), "/app/models/resnet50.pth")
 
 reader = easyocr.Reader(["en"], gpu=False)
+
+# CLIP models for search by text description (image + multilingual text).
+from sentence_transformers import SentenceTransformer
+SentenceTransformer("clip-ViT-B-32")
+SentenceTransformer("sentence-transformers/clip-ViT-B-32-multilingual-v1")
 PY
 
 RUN pip install --no-cache-dir prometheus-fastapi-instrumentator mlflow

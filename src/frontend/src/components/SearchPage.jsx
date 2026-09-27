@@ -1,5 +1,14 @@
 import {useCallback, useState} from 'react'
-import {searchSimilarCars} from '../services/api'
+import {searchByDescription, searchSimilarCars} from '../services/api'
+
+const MODE_IMAGE = 'image'
+const MODE_TEXT = 'text'
+
+const DESCRIPTION_EXAMPLES = [
+    'белая Toyota Camry седан, номер А1**ВС77',
+    'чёрный внедорожник с багажником на крыше',
+    'red hatchback, plate ?123??77',
+]
 
 export default function SearchPage() {
     const [imageFile, setImageFile] = useState(null)
@@ -9,6 +18,8 @@ export default function SearchPage() {
     const [results, setResults] = useState(null)
     const [dragOver, setDragOver] = useState(false)
     const [plateQuery, setPlateQuery] = useState('')
+    const [mode, setMode] = useState(MODE_IMAGE)
+    const [description, setDescription] = useState('')
 
     const handleFileSelect = useCallback((file) => {
         if (file && (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg')) {
@@ -37,13 +48,19 @@ export default function SearchPage() {
         setDragOver(false)
     }, [])
 
+    const canSearch = mode === MODE_IMAGE
+        ? Boolean(imageFile)
+        : Boolean(description.trim() || plateQuery.trim())
+
     const handleSearch = async () => {
-        if (!imageFile) return
+        if (!canSearch) return
 
         setLoading(true)
         setError(null)
         try {
-            const data = await searchSimilarCars(imageFile, plateQuery)
+            const data = mode === MODE_IMAGE
+                ? await searchSimilarCars(imageFile, plateQuery, description)
+                : await searchByDescription(description, plateQuery)
             setResults(data)
         } catch (err) {
             setError(err.message)
@@ -58,16 +75,53 @@ export default function SearchPage() {
         setResults(null)
         setError(null)
         setPlateQuery('')
+        setDescription('')
     }
+
+    const handleModeChange = (nextMode) => {
+        if (nextMode === mode) return
+        setMode(nextMode)
+        setResults(null)
+        setError(null)
+    }
+
+    const isPlateOnly = results?.search_mode === 'plate'
 
     return (
         <div className="container">
             <div className="card">
                 <h1 className="card-title">Search for Similar Cars</h1>
+
+                <div className="mode-switch" role="tablist" aria-label="Search mode">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === MODE_IMAGE}
+                        className={`mode-switch-btn ${mode === MODE_IMAGE ? 'active' : ''}`}
+                        onClick={() => handleModeChange(MODE_IMAGE)}
+                        disabled={loading}
+                    >
+                        📷 By photo
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === MODE_TEXT}
+                        className={`mode-switch-btn ${mode === MODE_TEXT ? 'active' : ''}`}
+                        onClick={() => handleModeChange(MODE_TEXT)}
+                        disabled={loading}
+                    >
+                        📝 By description
+                    </button>
+                </div>
+
                 <p style={{color: 'var(--gray-500)', marginBottom: '1.5rem'}}>
-                    Upload a car photo with a partially visible license plate to find the top 5 most similar vehicles.
+                    {mode === MODE_IMAGE
+                        ? 'Upload a car photo with a partially visible license plate to find the top 5 most similar vehicles.'
+                        : 'Describe the car in Russian or English — color, make, body type, details — and optionally a plate fragment. No photo needed.'}
                 </p>
 
+                {mode === MODE_IMAGE && (<>
                 <div
                     className={`upload-zone ${dragOver ? 'dragover' : ''}`}
                     onDrop={handleDrop}
@@ -94,10 +148,47 @@ export default function SearchPage() {
                         <img src={imagePreview} alt="Uploaded car"/>
                     </div>
                 )}
+                </>)}
+
+                <div className="form-group">
+                    <label className="form-label" htmlFor="search-description">
+                        {mode === MODE_IMAGE ? 'Description (optional)' : 'Car description'}
+                    </label>
+                    <textarea
+                        id="search-description"
+                        className="form-input"
+                        rows={mode === MODE_IMAGE ? 2 : 3}
+                        maxLength={500}
+                        placeholder={mode === MODE_IMAGE
+                            ? 'белый седан, литые диски'
+                            : DESCRIPTION_EXAMPLES[0]}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (mode === MODE_TEXT && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSearch()
+                        }}
+                        disabled={loading}
+                    />
+                    {mode === MODE_TEXT && (
+                        <div className="example-chips">
+                            {DESCRIPTION_EXAMPLES.map((example) => (
+                                <button
+                                    key={example}
+                                    type="button"
+                                    className="example-chip"
+                                    onClick={() => setDescription(example)}
+                                    disabled={loading}
+                                >
+                                    {example}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <div className="form-group">
                     <label className="form-label" htmlFor="search-plate-query">
-                        Visible plate fragment
+                        Visible plate fragment{mode === MODE_TEXT ? ' (optional, overrides one in the description)' : ''}
                     </label>
                     <input
                         id="search-plate-query"
@@ -114,12 +205,12 @@ export default function SearchPage() {
                     <button
                         className="btn btn-primary btn-block"
                         onClick={handleSearch}
-                        disabled={!imageFile || loading}
+                        disabled={!canSearch || loading}
                     >
                         {loading ? <span className="spinner"/> : '🔍'}
-                        {loading ? 'Searching...' : 'Search Similar Cars'}
+                        {loading ? 'Searching...' : (mode === MODE_IMAGE ? 'Search Similar Cars' : 'Search by Description')}
                     </button>
-                    {imageFile && (
+                    {(imageFile || description || plateQuery) && (
                         <button className="btn btn-secondary" onClick={handleReset} disabled={loading}>
                             Reset
                         </button>
@@ -140,17 +231,23 @@ export default function SearchPage() {
                             Search Results
                         </h2>
                         <span className="results-count">
-              Detected plate: <strong>{results.detected_plate || 'N/A'}</strong>
+                            {results.search_mode === 'image' || results.search_mode === 'image+text' ? (
+                                <>Detected plate: <strong>{results.detected_plate || 'N/A'}</strong></>
+                            ) : (
+                                <>Description: <strong>{results.text_query || '—'}</strong></>
+                            )}
                             {results.plate_query ? (
-                                <> &middot; Query: <strong>{results.plate_query}</strong></>
+                                <> &middot; Plate: <strong>{results.plate_query}</strong></>
                             ) : null}
                             {' '}&middot; {results.total_found} car(s) found
-            </span>
+                        </span>
                     </div>
 
                     {results.results.length === 0 ? (
                         <p style={{color: 'var(--gray-500)', textAlign: 'center', padding: '2rem'}}>
-                            No similar cars found in the database.
+                            {mode === MODE_TEXT
+                                ? 'No cars match this description. Try fewer details or a shorter plate fragment.'
+                                : 'No similar cars found in the database.'}
                         </p>
                     ) : (
                         results.results.map((car, index) => (
@@ -171,8 +268,10 @@ export default function SearchPage() {
                                     <div className="result-plate">{car.plate_number}</div>
                                     <div className="result-id">ID: {car.car_id}</div>
                                     <span className="result-score">
-                    ✓ {(car.similarity_score * 100).toFixed(1)}% similarity
-                  </span>
+                                        {isPlateOnly
+                                            ? '✓ plate match'
+                                            : `✓ ${(car.similarity_score * 100).toFixed(1)}% ${results.search_mode === 'text' ? 'relevance' : 'similarity'}`}
+                                    </span>
                                 </div>
                             </div>
                         ))

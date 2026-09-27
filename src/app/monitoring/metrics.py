@@ -75,6 +75,12 @@ search_similarity_score = Histogram(
     buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 )
 
+search_requests_by_mode_total = Counter(
+    "autobahncv_search_requests_by_mode_total",
+    "Search requests by resolved mode",
+    ["mode"]  # image, image+text, text, plate
+)
+
 feedback_actions_total = Counter(
     "autobahncv_feedback_actions_total",
     "User feedback actions",

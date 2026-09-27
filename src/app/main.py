@@ -35,6 +35,12 @@ async def lifespan(app: FastAPI):
         processing_pipeline = ImageProcessingPipeline()
         await processing_pipeline.initialize()
         app.state.processing_pipeline = processing_pipeline
+
+        if processing_pipeline.text_search_available:
+            try:
+                await es_client.ensure_text_search_mapping()
+            except Exception as exc:
+                logger.warning("Could not update index mapping: %s", exc)
     except Exception:
         await es_client.close()
         s3_client.close()
@@ -85,7 +91,9 @@ def custom_openapi_schema(app: FastAPI) -> dict:
     openapi_schema["tags"] = [
         {
             "name": "search",
-            "description": "Search for similar cars by uploading a photo",
+            "description": (
+                "Search for cars by photo, by text description, or both"
+            ),
         },
         {
             "name": "index",
@@ -122,6 +130,8 @@ def create_application() -> FastAPI:
 This system allows you to:
 - **Search** for similar cars by uploading a photo with a partially visible
   license plate
+- **Search by description** — find cars by a free-text description
+  (e.g. "белая Toyota Camry, номер А1**ВС77") without a photo
 - **Index** new cars into the system for future search queries
 
 ## How it works:

@@ -38,6 +38,12 @@ curl -X PUT "${ES_HOST}/${ES_INDEX}" \
         "index": true,
         "similarity": "cosine"
       },
+      "clip_embedding": {
+        "type": "dense_vector",
+        "dims": 512,
+        "index": true,
+        "similarity": "cosine"
+      },
       "s3_key": {
         "type": "keyword"
       },
@@ -56,5 +62,5 @@ curl -X PUT "${ES_HOST}/${ES_INDEX}" \
 echo ""
 echo "Elasticsearch index mapping created successfully!"
 echo "Index: ${ES_INDEX}"
-echo "Embedding dims: 2048"
+echo "Embedding dims: 2048 (ResNet), 512 (CLIP, text search)"
 echo "Similarity: cosine"
