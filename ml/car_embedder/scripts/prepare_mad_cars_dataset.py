@@ -173,4 +173,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    from filelock import FileLock
+
+    lock_path = repo_root() / "ml" / "car_embedder" / "data" / ".prepare.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    # Prefetch and the training queue must not modify the dataset concurrently.
+    with FileLock(str(lock_path)):
+        main()

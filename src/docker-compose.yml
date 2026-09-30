@@ -29,7 +29,10 @@ services:
 
   # MinIO - S3-compatible object storage (Garage-compatible API)
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    build:
+      context: ./minio
+      dockerfile: Dockerfile.server
+    image: autobahncv-minio:RELEASE.2025-09-07T16-13-09Z
     container_name: autobahncv-minio
     command: server /data --console-address ":9001"
     environment:
@@ -43,14 +46,17 @@ services:
     networks:
       - autobahncv-network
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: [ "CMD", "wget", "--quiet", "--spider", "http://localhost:9000/minio/health/live" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   # MinIO setup job (creates bucket and sets policy)
   minio-setup:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    build:
+      context: ./minio
+      dockerfile: Dockerfile.client
+    image: autobahncv-minio-client:RELEASE.2025-08-13T08-35-41Z
     container_name: autobahncv-minio-setup
     environment:
       - MINIO_ROOT_USER=${S3_ACCESS_KEY}
@@ -58,16 +64,14 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      echo 'Waiting for MinIO to be ready...' &&
-      sleep 5 &&
-      echo 'Configuring MinIO...' &&
-      mc alias set local http://minio:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY &&
-      mc mb local/autobahncv || true &&
-      mc anonymous set download local/autobahncv &&
-      echo 'MinIO setup complete!'
-      "
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing local/autobahncv
+        mc anonymous set download local/autobahncv
+        echo 'MinIO setup complete!'
     networks:
       - autobahncv-network
 
@@ -80,18 +84,22 @@ services:
         condition: service_healthy
     entrypoint:
       - /bin/sh
-      - -c
+      - -ec
       - |
         echo 'Waiting for Elasticsearch to be ready...'
         sleep 10
         echo 'Checking Elasticsearch index mapping...'
-        if curl -fs 'http://elasticsearch:9200/cars/_mapping' \
-          | grep -q '"dims":2048'; then
-          echo 'Elasticsearch index mapping is already current.'
-        else
-          echo 'Recreating Elasticsearch index mapping...'
-          curl -s -X DELETE 'http://elasticsearch:9200/cars' || true
-          curl -s -X PUT 'http://elasticsearch:9200/cars' \
+        status=$$(curl -sS -o /tmp/cars-mapping.json -w '%{http_code}' 'http://elasticsearch:9200/cars/_mapping')
+        if [ "$$status" = 200 ]; then
+          if grep -q '"dims":2048' /tmp/cars-mapping.json; then
+            echo 'Elasticsearch index mapping is already current.'
+          else
+            echo 'Existing index mapping differs; refusing to delete data.' >&2
+            exit 1
+          fi
+        elif [ "$$status" = 404 ]; then
+          echo 'Creating Elasticsearch index mapping...'
+          curl -fsS -X PUT 'http://elasticsearch:9200/cars' \
             -H 'Content-Type: application/json' \
             -d '{
             "settings": {
@@ -116,6 +124,9 @@ services:
           }'
           echo ''
           echo 'Elasticsearch index mapping created successfully!'
+        else
+          echo "Cannot check existing index (HTTP $$status); refusing to modify data." >&2
+          exit 1
         fi
     networks:
       - autobahncv-network

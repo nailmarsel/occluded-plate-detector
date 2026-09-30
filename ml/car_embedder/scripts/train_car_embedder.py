@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import math
 import random
 import shutil
 from pathlib import Path
+from time import monotonic
 
 import torch
 from torch import nn
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset, random_split
 from torchvision.datasets import ImageFolder
 from tqdm import tqdm
 
@@ -22,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--backbone", default="resnet50", choices=["resnet50", "resnet101"])
     parser.add_argument("--runs-dir", type=Path, default=work_dir / "runs")
     parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--max-minutes", type=float, default=25)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--device", default="auto")
@@ -32,7 +35,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+    if not 0 < args.max_minutes <= 30:
+        parser.error("--max-minutes must be positive and at most 30")
+    for name in ("epochs", "batch_size", "lr"):
+        if not math.isfinite(getattr(args, name)) or getattr(args, name) <= 0:
+            parser.error(f"--{name.replace('_', '-')} must be finite and positive")
+    if args.workers < 0:
+        parser.error("--workers must be non-negative")
+    deadline = monotonic() + args.max_minutes * 60
     if not args.data_dir.exists():
         raise RuntimeError(
             f"Data directory does not exist: {args.data_dir}. "
@@ -52,7 +64,10 @@ def main() -> None:
     val_size = max(1, int(len(full_dataset) * 0.1))
     train_size = len(full_dataset) - val_size
     train_set, val_set = random_split(full_dataset, [train_size, val_size])
-    val_set.dataset.transform = build_transforms(train=False)
+    val_set = Subset(
+        ImageFolder(args.data_dir, transform=build_transforms(train=False)),
+        val_set.indices,
+    )
 
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
     val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
@@ -66,9 +81,13 @@ def main() -> None:
     best_acc = -1.0
 
     for epoch in range(1, args.epochs + 1):
+        if monotonic() >= deadline:
+            break
         model.train()
         losses: list[float] = []
         for images, labels in tqdm(train_loader, desc=f"epoch {epoch}/{args.epochs}"):
+            if monotonic() >= deadline:
+                break
             images = images.to(device)
             labels = labels.to(device)
             logits, _ = model(images)
@@ -78,15 +97,21 @@ def main() -> None:
             optimizer.step()
             losses.append(float(loss.item()))
 
+        if monotonic() >= deadline:
+            break
         model.eval()
         correct = 0
         total = 0
         with torch.inference_mode():
             for images, labels in val_loader:
+                if monotonic() >= deadline:
+                    break
                 logits, _ = model(images.to(device))
                 predictions = logits.argmax(dim=1).cpu()
                 correct += int((predictions == labels).sum().item())
                 total += labels.numel()
+        if monotonic() >= deadline:
+            break
         val_acc = correct / max(total, 1)
         print(f"epoch={epoch} loss={sum(losses) / max(len(losses), 1):.4f} val_acc={val_acc:.4f}")
         if val_acc > best_acc:
@@ -101,6 +126,11 @@ def main() -> None:
                 best_path,
             )
 
+    if monotonic() >= deadline:
+        print("Time budget exhausted.")
+    if best_acc < 0:
+        print("No completed validation checkpoint in this run; nothing to publish.")
+        return
     print(f"Best checkpoint: {best_path} val_acc={best_acc:.4f}")
     if args.publish:
         args.artifact_path.parent.mkdir(parents=True, exist_ok=True)

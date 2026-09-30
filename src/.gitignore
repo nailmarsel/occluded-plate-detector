@@ -49,6 +49,8 @@ logs/
 
 # Models (large files)
 *.pt
+# Published application checkpoints are versioned in the repository.
+!/models/*.pt
 *.onnx
 *.pb
 

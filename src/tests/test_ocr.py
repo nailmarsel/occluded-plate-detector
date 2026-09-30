@@ -8,18 +8,30 @@ def _bbox(left: int, top: int, right: int, bottom: int):
 
 
 class TestOCRCandidateSelection:
-    def test_prefers_complete_russian_plate_over_region_fragment(self):
+    @pytest.mark.parametrize(
+        ("body_confidence", "region_confidence", "expected"),
+        [
+            (0.72, 0.99, "E507MO136"),
+            (0.2, 0.99, "******136"),
+            (0.72, 0.2, "E507MO***"),
+        ],
+    )
+    def test_prefers_complete_russian_plate_over_region_fragment(
+        self, body_confidence, region_confidence, expected
+    ):
         results = [
-            (_bbox(0, 0, 100, 20), "E507MO", 0.72),
-            (_bbox(110, 0, 150, 20), "136", 0.99),
+            (_bbox(0, 0, 100, 20), "E507MO", body_confidence),
+            (_bbox(110, 0, 150, 20), "136", region_confidence),
         ]
 
         best = OCRNeuron._select_best_candidate(OCRNeuron._build_candidates(results))
 
-        assert best.text == "E507MO136"
+        assert best.text == expected
         assert best.raw_text == "E507MO 136"
-        assert best.is_valid_russian_plate is True
-        assert best.confidence == pytest.approx(0.855)
+        assert best.is_valid_russian_plate is ("*" not in expected)
+        assert best.confidence == pytest.approx(
+            (body_confidence + region_confidence) / 2
+        )
 
     def test_transliterates_cyrillic_plate_letters_before_selection(self):
         results = [
