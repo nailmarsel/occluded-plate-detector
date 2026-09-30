@@ -1,0 +1,13 @@
+# Explicit opt-in: leave the base deployment mode unchanged.
+services:
+  app:
+    environment:
+      ML_STRICT_STARTUP: "True"
+    healthcheck:
+      start_period: 300s
+      interval: 10s
+      timeout: 10s
+      retries: 12
+  gateway:
+    ports: !override
+      - "127.0.0.1:80:80"

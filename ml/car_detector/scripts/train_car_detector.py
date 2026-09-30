@@ -16,6 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data", required=True, help="Path to YOLO data.yaml.")
     parser.add_argument("--base-model", default="yolo11n.pt")
     parser.add_argument("--epochs", type=int, default=80)
+    parser.add_argument("--max-minutes", type=float, default=25)
     parser.add_argument("--imgsz", type=int, default=960)
     parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--device", default="auto")
@@ -33,7 +34,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+    if not 0 < args.max_minutes <= 30:
+        parser.error("--max-minutes must be positive and at most 30")
+    for name in ("epochs", "imgsz", "batch"):
+        if getattr(args, name) <= 0:
+            parser.error(f"--{name} must be positive")
+    if args.workers < 0 or args.patience < 0:
+        parser.error("--workers and --patience must be non-negative")
     try:
         from device import resolve_training_device
     except ModuleNotFoundError:
@@ -48,6 +57,7 @@ def main() -> None:
     results = model.train(
         data=args.data,
         epochs=args.epochs,
+        time=args.max_minutes / 60,
         imgsz=args.imgsz,
         batch=args.batch,
         device=device,

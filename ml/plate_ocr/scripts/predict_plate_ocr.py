@@ -47,7 +47,7 @@ def main() -> None:
     with torch.inference_mode():
         for image_path in iter_images(Path(args.source)):
             image = Image.open(image_path).convert("RGB")
-            tensor = transform.transform(image).unsqueeze(0).to(device)
+            tensor = transform(image).unsqueeze(0).to(device)
             prediction = decode_logits(model(tensor))[0]
             print(f"{image_path}: {prediction}")
 

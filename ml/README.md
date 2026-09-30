@@ -12,6 +12,14 @@ This directory separates model development from the FastAPI application.
 The Docker app mounts `src/models` into `/app/models`, so published artifacts are
 available to the app container.
 
+## Model Storage
+
+The four published checkpoints in `src/models/*.pt` are versioned directly in
+Git so a regular clone contains all weights required for local deployment.
+Intermediate checkpoints, downloaded base models, datasets, and run outputs stay
+ignored. After publishing new weights, explicitly stage `src/models/*.pt` before
+committing.
+
 The app loads these files from `src/models` when the matching environment
 variables point to `/app/models/*.pt` inside Docker:
 
@@ -26,6 +34,13 @@ If a training run was completed without `--publish`, copy its `best.pt` from
 the workspace `runs/` directory to the artifact name shown in the table.
 
 ## MacBook M3 Pro Defaults
+
+All four training scripts accept `--max-minutes` (default: 25, maximum: 30).
+OCR and embedder training publish only checkpoints from completed validation.
+The internal budget is cooperative: an active batch or YOLO finalization can
+overrun it. For a strict process limit below 30 minutes on Linux, wrap each
+training command with `timeout -k 10s 1780s`. A forced stop may prevent artifact
+publication. Downloads and dataset preparation should run separately.
 
 The Makefiles are tuned for stable local training on Apple Silicon:
 

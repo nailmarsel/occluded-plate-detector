@@ -11,7 +11,7 @@ from app.core.logging import logger
 from app.neurons.base import BaseNeuron
 
 
-PLATE_CHARS_PATTERN = re.compile(r"[^A-Z0-9]")
+PLATE_CHARS_PATTERN = re.compile(r"[^A-Z0-9*]")
 RUSSIAN_PLATE_LETTERS = "ABEKMHOPCTYX"
 RUSSIAN_PLATE_ALLOWLIST = "0123456789ABEKMHOPCTYXАВЕКМНОРСТУХ"
 RUSSIAN_PRIVATE_PLATE_PATTERN = re.compile(
@@ -76,6 +76,8 @@ class OCRNeuron(BaseNeuron):
     async def initialize(self) -> None:
         """Load custom OCR checkpoint or EasyOCR reader."""
         model_path = Path(self.model_path)
+        if model_path.suffix == ".pt" and not model_path.is_file():
+            raise FileNotFoundError(f"OCR checkpoint not found: {model_path}")
         if model_path.exists() and model_path.suffix == ".pt":
             await self._initialize_custom_model(model_path)
             return
@@ -173,20 +175,28 @@ class OCRNeuron(BaseNeuron):
         logger.info("Custom OCR model initialized: %s on %s", model_path, self.device)
 
     @staticmethod
-    def _decode_custom_logits(logits) -> list[str]:
+    def _decode_custom_logits(logits) -> list[tuple[str, list[float]]]:
         alphabet = "0123456789ABEKMHOPCTYX"
         index_to_char = {index + 1: char for index, char in enumerate(alphabet)}
         blank_index = 0
-        predictions = logits.argmax(dim=-1).cpu()
-        decoded: list[str] = []
-        for sequence in predictions:
+        probabilities, predictions = logits.softmax(dim=-1).max(dim=-1)
+        decoded: list[tuple[str, list[float]]] = []
+        for sequence, scores in zip(
+            predictions.cpu(), probabilities.cpu(), strict=True
+        ):
             chars: list[str] = []
+            confidences: list[float] = []
             previous = blank_index
-            for index in sequence.tolist():
-                if index != blank_index and index != previous:
-                    chars.append(index_to_char.get(index, ""))
+            for index, score in zip(sequence.tolist(), scores.tolist(), strict=True):
+                # CTC blanks separate emissions; they are not unknown characters.
+                if index != blank_index:
+                    if index != previous:
+                        chars.append(index_to_char[index])
+                        confidences.append(score)
+                    else:
+                        confidences[-1] = max(confidences[-1], score)
                 previous = index
-            decoded.append("".join(chars))
+            decoded.append(("".join(chars), confidences))
         return decoded
 
     @staticmethod
@@ -241,7 +251,9 @@ class OCRNeuron(BaseNeuron):
         return (mean(xs), mean(ys))
 
     @classmethod
-    def _build_candidates(cls, results, source: str = "raw") -> list[PlateCandidate]:
+    def _build_candidates(
+        cls, results, source: str = "raw", confidence_threshold: float = 0.6
+    ) -> list[PlateCandidate]:
         candidates: list[PlateCandidate] = []
         normalized_parts: list[str] = []
         raw_parts: list[str] = []
@@ -253,6 +265,10 @@ class OCRNeuron(BaseNeuron):
                 continue
 
             confidence = float(confidence)
+            # EasyOCR exposes confidence per fragment, not per character.
+            if not np.isfinite(confidence) or confidence < confidence_threshold:
+                normalized_text = "*" * len(normalized_text)
+                confidence = 0.0 if not np.isfinite(confidence) else confidence
             normalized_parts.append(normalized_text)
             raw_parts.append(text)
             confidences.append(confidence)
@@ -294,6 +310,7 @@ class OCRNeuron(BaseNeuron):
 
     @staticmethod
     def _select_best_candidate(candidates: list[PlateCandidate]) -> PlateCandidate:
+        candidates = [item for item in candidates if item.text.strip("*")]
         if not candidates:
             raise ValueError("No license plate text recognized")
 
@@ -301,6 +318,7 @@ class OCRNeuron(BaseNeuron):
             candidates,
             key=lambda item: (
                 item.is_valid_russian_plate,
+                len(item.text.replace("*", "")),
                 len(item.text),
                 item.confidence,
             ),
@@ -325,14 +343,15 @@ class OCRNeuron(BaseNeuron):
                     detail=1,
                     paragraph=False,
                 )
-                all_candidates.extend(self._build_candidates(results, source=source))
+                all_candidates.extend(
+                    self._build_candidates(
+                        results,
+                        source=source,
+                        confidence_threshold=self.confidence_threshold,
+                    )
+                )
 
             best = self._select_best_candidate(all_candidates)
-            min_confidence = (
-                min(self.confidence_threshold, 0.35)
-                if best.is_valid_russian_plate
-                else self.confidence_threshold
-            )
             logger.info(
                 "OCR best candidate: text='%s', raw='%s', source=%s, "
                 "confidence=%.3f, valid_russian=%s",
@@ -342,12 +361,6 @@ class OCRNeuron(BaseNeuron):
                 best.confidence,
                 best.is_valid_russian_plate,
             )
-            if best.confidence < min_confidence:
-                raise ValueError(
-                    "License plate OCR confidence is below threshold: "
-                    f"{best.confidence:.3f}"
-                )
-
             return {
                 "plate_number": best.text,
                 "confidence": best.confidence,
@@ -371,17 +384,26 @@ class OCRNeuron(BaseNeuron):
         try:
             tensor = self.transform(image.convert("RGB")).unsqueeze(0).to(self.device)
             with self.torch.inference_mode():
-                prediction = self._decode_custom_logits(self.model(tensor))[0]
+                raw_prediction, confidences = self._decode_custom_logits(
+                    self.model(tensor)
+                )[0]
+            prediction = "".join(
+                char
+                if np.isfinite(score) and score >= self.confidence_threshold
+                else "*"
+                for char, score in zip(raw_prediction, confidences, strict=True)
+            )
             prediction = self._repair_common_ocr_confusions(
                 self._normalize_plate(prediction)
             )
             is_valid = bool(RUSSIAN_PRIVATE_PLATE_PATTERN.fullmatch(prediction))
-            if not prediction:
-                raise ValueError("No license plate text recognized")
+            if not prediction.strip("*"):
+                raise ValueError("No license plate characters recognized confidently")
             return {
                 "plate_number": prediction,
-                "confidence": 1.0,
-                "raw_text": prediction,
+                "confidence": float(mean(confidences)),
+                "character_confidences": confidences,
+                "raw_text": raw_prediction,
                 "is_valid_russian_plate": is_valid,
                 "ocr_source": "custom",
             }

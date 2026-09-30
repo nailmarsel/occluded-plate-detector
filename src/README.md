@@ -125,6 +125,41 @@ the app gateway. Use the `full` profile when you want `/app`, `/grafana`, and
 
 ### 6. Run the full stack (including the app)
 
+#### Local deployment after training
+
+After all four training jobs and evaluation succeed, the supervisor should run
+this command from the repository root:
+
+```bash
+bash scripts/deploy_local.sh
+```
+
+The script requires `docker`, `curl`, `python3`, `src/.env`, and all four
+nonempty model files listed below. It starts the `full` profile with
+`up -d --build --wait --wait-timeout 600`, then checks `/app/` and requires
+the JSON `status` from `/api/v1/health` to be `healthy`. Any failed step exits
+nonzero. The supervisor is responsible for training/evaluation success;
+file presence alone does not prove model quality.
+
+The explicit `docker-compose.local.yml` override enables `ML_STRICT_STARTUP`
+so model initialization errors abort backend startup: the health endpoint alone
+does not reliably prove ML readiness. It allows five minutes for CPU startup
+before counting healthcheck failures. The override replaces gateway ports using
+`!override` (supported by Compose v5.5), publishing only `127.0.0.1:80:80`.
+Other services remain internal to Docker. The base Compose mode is unchanged.
+
+The backend image installs `torch==2.7.1+cpu` and `torchvision==0.22.1`
+from the PyTorch CPU index before the ML requirements, keeping those versions
+pinned during ML dependency resolution. Compose does not provide GPU devices,
+so downloading CUDA runtime packages would only add unnecessary gigabytes.
+The build no longer preloads default YOLO, ResNet, or EasyOCR weights: this
+deployment uses custom checkpoints, and the read-only `/app/models` bind mount
+would hide models baked into that directory. EasyOCR's default cache is not
+needed for the custom OCR checkpoint. `models/` is excluded from the build
+context as well; training artifacts are supplied only at runtime.
+
+#### Base deployment
+
 ```bash
 docker compose --profile full up -d
 ```

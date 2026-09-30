@@ -12,7 +12,7 @@ from app.neurons.car_plate_detection import CarDetectionNeuron, PlateDetectionNe
 from app.neurons.embedding import EmbeddingNeuron
 from app.neurons.ocr import OCRNeuron
 
-PLATE_CHARS_PATTERN = re.compile(r"[^A-Z0-9]")
+PLATE_CHARS_PATTERN = re.compile(r"[^A-Z0-9*]")
 PLATE_QUERY_CHARS_PATTERN = re.compile(r"[^A-Z0-9*?]")
 CYRILLIC_TO_LATIN_PLATE_CHARS = str.maketrans(
     {

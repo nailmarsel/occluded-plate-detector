@@ -15,7 +15,7 @@ class EmbeddingNeuron(BaseNeuron):
     """
 
     def __init__(self, model_path: str, embedding_dim: int = 2048):
-        self.model_path = model_path.lower()
+        self.model_path = model_path
         self.embedding_dim = embedding_dim
         self.device = None
         self.model = None
@@ -35,6 +35,8 @@ class EmbeddingNeuron(BaseNeuron):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model_path = Path(self.model_path)
+        if model_path.suffix == ".pt" and not model_path.is_file():
+            raise FileNotFoundError(f"Embedding checkpoint not found: {model_path}")
         if model_path.exists() and model_path.suffix == ".pt":
             checkpoint = torch.load(model_path, map_location=self.device)
             backbone_name = checkpoint.get("backbone", "resnet50")
@@ -65,7 +67,7 @@ class EmbeddingNeuron(BaseNeuron):
             )
             model_name = str(model_path)
         else:
-            model_name = self.model_path or "resnet50"
+            model_name = self.model_path.lower() or "resnet50"
             if model_name == "resnet101":
                 weights = models.ResNet101_Weights.DEFAULT
                 backbone = models.resnet101(weights=weights)
