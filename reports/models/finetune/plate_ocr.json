@@ -1,0 +1,137 @@
+{
+  "model": "plate_ocr",
+  "title": "Распознавание номера (CRNN + CTC)",
+  "baseline": "F:\\occluded-plate-detector\\src\\models\\plate_ocr.pt",
+  "candidate": "F:\\occluded-plate-detector\\ml\\plate_ocr\\runs\\finetune_plate_ocr\\best.pt",
+  "device": "cuda:0",
+  "finetune": {
+    "model": "plate_ocr",
+    "base_model": "F:\\occluded-plate-detector\\src\\models\\plate_ocr.pt",
+    "finetuned_model": "F:\\occluded-plate-detector\\ml\\plate_ocr\\runs\\finetune_plate_ocr\\best.pt",
+    "base_val_exact": 0.8379,
+    "best_val_exact": 0.8395,
+    "best_epoch": 1,
+    "epochs_requested": 8,
+    "lr": 0.0001,
+    "aug_strength": 1.0,
+    "batch_size": 64,
+    "device": "cuda:0",
+    "train_minutes": 24.6,
+    "history": [
+      {
+        "epoch": 1,
+        "loss": 0.0851,
+        "val_exact": 0.8395
+      },
+      {
+        "epoch": 2,
+        "loss": 0.0597,
+        "val_exact": 0.8393
+      },
+      {
+        "epoch": 3,
+        "loss": 0.0545,
+        "val_exact": 0.8393
+      },
+      {
+        "epoch": 4,
+        "loss": 0.0506,
+        "val_exact": 0.8393
+      },
+      {
+        "epoch": 5,
+        "loss": 0.0495,
+        "val_exact": 0.8393
+      },
+      {
+        "epoch": 6,
+        "loss": 0.0489,
+        "val_exact": 0.8393
+      }
+    ],
+    "finished_at": "2026-10-04T09:55:13+00:00"
+  },
+  "evaluated_at": "2026-10-04T09:56:26+00:00",
+  "rows": [
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные кропы номеров",
+      "n": 2845,
+      "metric": "exact_match",
+      "metric_title": "Точность номера целиком (exact match)",
+      "higher_is_better": true,
+      "baseline": 0.8495606326889279,
+      "candidate": 0.8523725834797891
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные кропы номеров",
+      "n": 2845,
+      "metric": "char_accuracy",
+      "metric_title": "Точность по символам (1 − CER)",
+      "higher_is_better": true,
+      "baseline": 0.9652864910079465,
+      "candidate": 0.9682559598494354
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные кропы номеров",
+      "n": 2845,
+      "metric": "cer",
+      "metric_title": "CER (доля ошибок в символах)",
+      "higher_is_better": false,
+      "baseline": 0.034713508992053534,
+      "candidate": 0.03174404015056462
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные кропы номеров",
+      "n": 2845,
+      "metric": "ms_per_image",
+      "metric_title": "Инференс, мс/изобр.",
+      "higher_is_better": false,
+      "baseline": 1.4502257293502794,
+      "candidate": 1.599051318099061
+    },
+    {
+      "dataset": "degraded",
+      "dataset_title": "Тест: ухудшенные кропы (размытие, шум, контраст)",
+      "n": 2845,
+      "metric": "exact_match",
+      "metric_title": "Точность номера целиком (exact match)",
+      "higher_is_better": true,
+      "baseline": 0.6913884007029877,
+      "candidate": 0.7701230228471002
+    },
+    {
+      "dataset": "degraded",
+      "dataset_title": "Тест: ухудшенные кропы (размытие, шум, контраст)",
+      "n": 2845,
+      "metric": "char_accuracy",
+      "metric_title": "Точность по символам (1 − CER)",
+      "higher_is_better": true,
+      "baseline": 0.9128816394813886,
+      "candidate": 0.9422417398578001
+    },
+    {
+      "dataset": "degraded",
+      "dataset_title": "Тест: ухудшенные кропы (размытие, шум, контраст)",
+      "n": 2845,
+      "metric": "cer",
+      "metric_title": "CER (доля ошибок в символах)",
+      "higher_is_better": false,
+      "baseline": 0.08711836051861147,
+      "candidate": 0.05775826014219992
+    },
+    {
+      "dataset": "degraded",
+      "dataset_title": "Тест: ухудшенные кропы (размытие, шум, контраст)",
+      "n": 2845,
+      "metric": "ms_per_image",
+      "metric_title": "Инференс, мс/изобр.",
+      "higher_is_better": false,
+      "baseline": 1.2935220738101558,
+      "candidate": 0.6259493848864605
+    }
+  ]
+}

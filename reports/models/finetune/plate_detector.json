@@ -1,0 +1,146 @@
+{
+  "model": "license_plate_detector",
+  "title": "Детектор номеров (YOLO)",
+  "baseline": "F:\\occluded-plate-detector\\src\\models\\license_plate_detector.pt",
+  "candidate": "F:\\occluded-plate-detector\\ml\\plate_detector\\runs\\finetune_plate_yolo\\weights\\best.pt",
+  "imgsz": 960,
+  "device": "0",
+  "finetune": {
+    "model": "license_plate_detector",
+    "base_model": "F:\\occluded-plate-detector\\src\\models\\license_plate_detector.pt",
+    "finetuned_model": "F:\\occluded-plate-detector\\ml\\plate_detector\\runs\\finetune_plate_yolo\\weights\\best.pt",
+    "data": "F:\\occluded-plate-detector\\ml\\plate_detector\\data\\yolo\\russian_plate_occluded\\data_finetune.yaml",
+    "epochs_requested": 10,
+    "imgsz": 960,
+    "batch": 4,
+    "lr0": 0.001,
+    "occlusion_fraction": 0.3,
+    "fraction": 1.0,
+    "device": "0",
+    "train_minutes": 27.8,
+    "finished_at": "2026-10-04T07:56:28+00:00"
+  },
+  "evaluated_at": "2026-10-04T07:59:16+00:00",
+  "rows": [
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные изображения",
+      "n": 2564,
+      "metric": "mAP50",
+      "metric_title": "mAP@0.5",
+      "higher_is_better": true,
+      "baseline": 0.9912326298787785,
+      "candidate": 0.9914083886370888
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные изображения",
+      "n": 2564,
+      "metric": "mAP50-95",
+      "metric_title": "mAP@0.5:0.95",
+      "higher_is_better": true,
+      "baseline": 0.8253629945891671,
+      "candidate": 0.8183814570170647
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные изображения",
+      "n": 2564,
+      "metric": "precision",
+      "metric_title": "Precision",
+      "higher_is_better": true,
+      "baseline": 0.986788682399493,
+      "candidate": 0.9804592827638268
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные изображения",
+      "n": 2564,
+      "metric": "recall",
+      "metric_title": "Recall",
+      "higher_is_better": true,
+      "baseline": 0.9750465549348231,
+      "candidate": 0.9769087523277468
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные изображения",
+      "n": 2564,
+      "metric": "f1",
+      "metric_title": "F1",
+      "higher_is_better": true,
+      "baseline": 0.9808824787240138,
+      "candidate": 0.9786807973372845
+    },
+    {
+      "dataset": "clean",
+      "dataset_title": "Тест: исходные изображения",
+      "n": 2564,
+      "metric": "ms_per_image",
+      "metric_title": "Инференс, мс/изобр.",
+      "higher_is_better": false,
+      "baseline": 4.179611934473052,
+      "candidate": 3.8260129875257483
+    },
+    {
+      "dataset": "occluded",
+      "dataset_title": "Тест: номера с перекрытием",
+      "n": 2564,
+      "metric": "mAP50",
+      "metric_title": "mAP@0.5",
+      "higher_is_better": true,
+      "baseline": 0.6732014970688948,
+      "candidate": 0.9882092816477467
+    },
+    {
+      "dataset": "occluded",
+      "dataset_title": "Тест: номера с перекрытием",
+      "n": 2564,
+      "metric": "mAP50-95",
+      "metric_title": "mAP@0.5:0.95",
+      "higher_is_better": true,
+      "baseline": 0.2798416750000473,
+      "candidate": 0.8360274956320228
+    },
+    {
+      "dataset": "occluded",
+      "dataset_title": "Тест: номера с перекрытием",
+      "n": 2564,
+      "metric": "precision",
+      "metric_title": "Precision",
+      "higher_is_better": true,
+      "baseline": 0.6744344640195523,
+      "candidate": 0.9612549349404876
+    },
+    {
+      "dataset": "occluded",
+      "dataset_title": "Тест: номера с перекрытием",
+      "n": 2564,
+      "metric": "recall",
+      "metric_title": "Recall",
+      "higher_is_better": true,
+      "baseline": 0.7027932960893855,
+      "candidate": 0.9713221601489758
+    },
+    {
+      "dataset": "occluded",
+      "dataset_title": "Тест: номера с перекрытием",
+      "n": 2564,
+      "metric": "f1",
+      "metric_title": "F1",
+      "higher_is_better": true,
+      "baseline": 0.6883219082471691,
+      "candidate": 0.9662623263337756
+    },
+    {
+      "dataset": "occluded",
+      "dataset_title": "Тест: номера с перекрытием",
+      "n": 2564,
+      "metric": "ms_per_image",
+      "metric_title": "Инференс, мс/изобр.",
+      "higher_is_better": false,
+      "baseline": 4.372866107644224,
+      "candidate": 4.029953822153433
+    }
+  ]
+}

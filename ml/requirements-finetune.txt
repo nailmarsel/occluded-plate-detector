@@ -1,0 +1,11 @@
+# Everything needed to fine-tune and compare the plate detector and plate OCR:
+#   python -m venv .venv && . .venv/bin/activate      (Windows: .venv\Scripts\activate)
+#   pip install -r ml/requirements-finetune.txt
+# For an NVIDIA GPU install the CUDA build of torch first, see https://pytorch.org/get-started/locally/
+huggingface-hub>=0.24.0
+numpy>=1.26.0
+Pillow>=10.0.0
+torch>=2.1.2
+torchvision>=0.16.2
+tqdm>=4.66.0
+ultralytics>=8.3.0

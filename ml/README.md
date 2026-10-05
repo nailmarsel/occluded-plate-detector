@@ -12,6 +12,17 @@ This directory separates model development from the FastAPI application.
 The Docker app mounts `src/models` into `/app/models`, so published artifacts are
 available to the app container.
 
+## Fine-tuning
+
+To fine-tune the published plate detector and plate OCR (instead of training from
+scratch) and get an old-vs-new comparison table, see [`FINETUNING.md`](FINETUNING.md):
+
+```bash
+pip install -r ml/requirements-finetune.txt
+python scripts/finetune_plate_models.py --quick   # smoke run
+python scripts/finetune_plate_models.py           # full run -> reports/models/FINETUNE_COMPARISON.md
+```
+
 ## Model Storage
 
 The four published checkpoints in `src/models/*.pt` are versioned directly in
